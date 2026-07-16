@@ -1,0 +1,42 @@
+.navbar {
+  background: #222;
+  color: white;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 22px 70px;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.nav-links {
+  display: flex;
+  gap: 35px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 17px;
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  color: #e63946;
+}
+
+.nav-icons {
+  display: flex;
+  gap: 22px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.nav-icons svg:hover {
+  color: #e63946;
+}
