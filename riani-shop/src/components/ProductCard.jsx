@@ -1,55 +1,98 @@
-import "../styles/Products.css";
+import { useContext } from "react";
+import { FaHeart } from "react-icons/fa";
 
-import ProductCard from "./ProductCard";
+import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
 
-import womenJacket from "../assets/images/products/women-jacket.jpg";
-import menJacket from "../assets/images/products/men-jacket.jpg";
-import sneakers from "../assets/images/products/sneakers.jpg";
-import handbag from "../assets/images/products/handbag.jpg";
+import "../styles/ProductCard.css";
 
-function Products() {
+function ProductCard({
+  id,
+  image,
+  category,
+  name,
+  price,
+}) {
+  const { addToCart } = useContext(CartContext);
+
+  const { wishlist, setWishlist } =
+    useContext(WishlistContext);
+
+  const isInWishlist = wishlist.some(
+    (item) => String(item.id) === String(id)
+  );
+
+  function handleAddToCart() {
+    addToCart({
+      id,
+      image,
+      category,
+      name,
+      price,
+    });
+  }
+
+  function toggleWishlist() {
+    if (isInWishlist) {
+      setWishlist(
+        wishlist.filter(
+          (item) => String(item.id) !== String(id)
+        )
+      );
+    } else {
+      setWishlist([
+        ...wishlist,
+        {
+          id,
+          image,
+          category,
+          name,
+          price,
+        },
+      ]);
+    }
+  }
+
   return (
-    <section className="products">
+    <div className="product-card">
+      <div className="product-image">
+        <button
+          type="button"
+          className={`wishlist-button ${
+            isInWishlist ? "wishlist-active" : ""
+          }`}
+          onClick={toggleWishlist}
+          aria-label="Toggle wishlist"
+        >
+          <FaHeart />
+        </button>
 
-      <div className="products-title">
-        <p>OUR PRODUCTS</p>
-        <h2>Featured Products</h2>
+        <img src={image} alt={name} />
       </div>
 
-      <div className="products-grid">
+      <div className="product-info">
+        <p className="product-category">
+          {category || "Uncategorized"}
+        </p>
 
-        <ProductCard
-          image={womenJacket}
-          category="Women"
-          name="Women's Jacket"
-          price="69.99"
-        />
+        <h3 className="product-name">
+          {name}
+        </h3>
 
-        <ProductCard
-          image={menJacket}
-          category="Men"
-          name="Men Jacket"
-          price="79.99"
-        />
+        <p className="product-price">
+          ${Number(price || 0).toFixed(2)}
+        </p>
 
-        <ProductCard
-          image={sneakers}
-          category="Shoes"
-          name="White Sneakers"
-          price="89.99"
-        />
-
-        <ProductCard
-          image={handbag}
-          category="Accessories"
-          name="Luxury Handbag"
-          price="59.99"
-        />
-
+        <button
+          type="button"
+          className="add-cart-button"
+          onClick={handleAddToCart}
+        >
+          Add To Cart
+        </button>
       </div>
-
-    </section>
+    </div>
   );
 }
 
-export default Products;
+export default ProductCard;

@@ -1,0 +1,63 @@
+.sale-banner {
+  margin: 90px 80px;
+  height: 450px;
+  border-radius: 20px;
+  overflow: hidden;
+
+  background-image: linear-gradient(
+      rgba(0,0,0,.45),
+      rgba(0,0,0,.45)
+    ),
+    url("../assets/images/hero.png");
+
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sale-overlay {
+  text-align: center;
+  color: white;
+}
+
+.sale-overlay p {
+  letter-spacing: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.sale-overlay h2 {
+  font-size: 60px;
+  margin-bottom: 10px;
+}
+
+.sale-overlay h3 {
+  font-size: 34px;
+  color: #ff4d4d;
+  margin-bottom: 20px;
+}
+
+.sale-overlay span {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 35px;
+}
+
+.sale-overlay button {
+  padding: 16px 40px;
+  border: none;
+  background: white;
+  color: #111;
+  font-size: 17px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: .3s;
+}
+
+.sale-overlay button:hover {
+  background: #e63946;
+  color: white;
+}

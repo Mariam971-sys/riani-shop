@@ -1,0 +1,42 @@
+.best-sellers {
+  padding: 80px 8%;
+  background: #ffffff;
+}
+
+.best-title {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.best-title p {
+  color: #888;
+  letter-spacing: 4px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.best-title h2 {
+  font-size: 60px;
+  color: #222;
+}
+
+.best-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+}
+
+@media (max-width: 768px) {
+  .best-sellers {
+    padding: 60px 20px;
+  }
+
+  .best-title h2 {
+    font-size: 38px;
+  }
+
+  .best-grid {
+    grid-template-columns: 1fr;
+  }
+}

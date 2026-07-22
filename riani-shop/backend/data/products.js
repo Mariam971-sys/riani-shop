@@ -1,0 +1,48 @@
+const products = [
+  {
+    name: "Women's Jacket",
+    price: 69.99,
+    description: "Stylish women's jacket",
+    image: "/images/women-jacket.jpg",
+    category: "Women",
+    brand: "Riani",
+    countInStock: 15,
+    rating: 4.8,
+    numReviews: 12,
+  },
+  {
+    name: "Men's Jacket",
+    price: 79.99,
+    description: "Warm men's jacket",
+    image: "/images/men-jacket.jpg",
+    category: "Men",
+    brand: "Riani",
+    countInStock: 10,
+    rating: 4.7,
+    numReviews: 8,
+  },
+  {
+    name: "Sneakers",
+    price: 89.99,
+    description: "Comfortable sneakers",
+    image: "/images/sneakers.jpg",
+    category: "Shoes",
+    brand: "Riani",
+    countInStock: 20,
+    rating: 4.9,
+    numReviews: 25,
+  },
+  {
+    name: "Elegant Dress",
+    price: 59.99,
+    description: "Elegant women's dress",
+    image: "/images/dress.jpg",
+    category: "Women",
+    brand: "Riani",
+    countInStock: 12,
+    rating: 4.6,
+    numReviews: 10,
+  },
+];
+
+module.exports = products;

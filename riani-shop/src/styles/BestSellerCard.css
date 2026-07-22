@@ -1,0 +1,102 @@
+.best-card-link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.best-card-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.best-card {
+  height: 100%;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.best-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.14);
+}
+
+.sale-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: #e63946;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 10;
+}
+
+.best-image {
+  height: 320px;
+  overflow: hidden;
+}
+
+.best-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.best-card:hover .best-image img {
+  transform: scale(1.08);
+}
+
+.best-info {
+  padding: 25px;
+}
+
+.best-category {
+  color: #888;
+  font-size: 13px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.best-info h3 {
+  font-size: 30px;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.stars {
+  color: gold;
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.best-info h4 {
+  color: #e63946;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.best-info button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 6px;
+  background: #222;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease;
+}
+
+.best-info button:hover {
+  background: #e63946;
+}

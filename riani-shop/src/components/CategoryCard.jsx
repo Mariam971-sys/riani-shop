@@ -1,13 +1,27 @@
+import { useNavigate } from "react-router-dom";
 import "../styles/Categories.css";
 
 function CategoryCard({ image, title }) {
+  const navigate = useNavigate();
+
+  function handleClick() {
+    navigate(`/shop?category=${title}`);
+  }
+
   return (
-    <div className="category-card">
+    <div
+      className="category-card"
+      onClick={handleClick}
+      style={{ cursor: "pointer" }}
+    >
       <img src={image} alt={title} />
 
       <div className="category-overlay">
         <h3>{title}</h3>
-        <button>Shop Now</button>
+
+        <button type="button">
+          Shop Now
+        </button>
       </div>
     </div>
   );

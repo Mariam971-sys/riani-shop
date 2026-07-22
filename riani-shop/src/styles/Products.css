@@ -1,51 +1,110 @@
-
-import "../styles/Products.css";
-import ProductCard from "./ProductCard";
-
-import womenJacket from "../assets/images/products/women-jacket.jpg";
-import menJacket from "../assets/images/products/men-jacket.jpg";
-import sneakers from "../assets/images/products/sneakers.jpg";
-import watch from "../assets/images/products/watch.jpg";
-
-function Products() {
-  return (
-    <section className="products">
-      <div className="products-title">
-        <p>OUR PRODUCTS</p>
-        <h2>Featured Products</h2>
-      </div>
-
-      <div className="products-grid">
-        <ProductCard
-          image={womenJacket}
-          category="Women"
-          name="Women's Jacket"
-          price="69.99"
-        />
-
-        <ProductCard
-          image={menJacket}
-          category="Men"
-          name="Men Jacket"
-          price="79.99"
-        />
-
-        <ProductCard
-          image={sneakers}
-          category="Shoes"
-          name="White Sneakers"
-          price="89.99"
-        />
-
-        <ProductCard
-          image={watch}
-          category="Accessories"
-          name="Classic Watch"
-          price="59.99"
-        />
-      </div>
-    </section>
-  );
+.products {
+  width: 100%;
+  padding: 80px 0;
+  background-color: #f8f8f8;
 }
 
-export default Products;
+.products-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.products-title p {
+  margin-bottom: 10px;
+  color: #888;
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.products-title h2 {
+  margin-bottom: 30px;
+  color: #111;
+  font-size: 42px;
+}
+
+.search-box {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.search-box input {
+  width: 450px;
+  max-width: 90%;
+  padding: 14px 20px;
+  border: 1px solid #bbb;
+  border-radius: 30px;
+  outline: none;
+  font-size: 16px;
+  background-color: white;
+}
+
+.search-box input:focus {
+  border-color: #222;
+}
+
+.category-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.category-buttons button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 30px;
+  background-color: #eee;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.category-buttons button:hover,
+.category-buttons button.active {
+  background-color: #222;
+  color: white;
+}
+
+.products-grid {
+  width: 92%;
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px;
+  align-items: stretch;
+}
+
+.no-products {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 18px;
+}
+
+@media (max-width: 1100px) {
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .products {
+    padding: 60px 0;
+  }
+
+  .products-grid {
+    width: 90%;
+    grid-template-columns: 1fr;
+  }
+
+  .products-title h2 {
+    font-size: 32px;
+  }
+
+  .product-image {
+    height: 320px;
+  }
+}
