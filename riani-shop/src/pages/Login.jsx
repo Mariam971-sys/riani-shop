@@ -5,103 +5,209 @@ import axios from "axios";
 import { UserContext } from "../context/UserContext";
 
 function Login() {
-  const { setUser } = useContext(UserContext);
+  const { login } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function handleLogin(e) {
-    e.preventDefault();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    if (!email || !password) {
-      alert("Please fill in all fields");
+  async function handleLogin(event) {
+    event.preventDefault();
+
+    setError("");
+
+    if (!email.trim() || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
     try {
-      const response = await axios.post(
+      setLoading(true);
+
+      const { data } = await axios.post(
         "http://localhost:5000/api/users/login",
         {
-          email,
+          email: email.trim().toLowerCase(),
           password,
         }
       );
 
-      const userData = response.data;
+      // UserContext wuxuu kaydinayaa userInfo iyo token
+      login(data);
 
-      // Kaydi user + token
-      localStorage.setItem(
-        "userInfo",
-        JSON.stringify(userData)
+      // Admin wuxuu aadayaa dashboard-ka
+      if (data.isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } catch (currentError) {
+      console.error("Login error:", currentError);
+
+      setError(
+        currentError.response?.data?.message ||
+          "Login failed. Please try again."
       );
-
-      // Ku kaydi Context
-      setUser(userData);
-
-      alert("Login successful!");
-
-      // U gudub home
-      navigate("/");
-    } catch (error) {
-      alert(
-        error.response?.data?.message || "Login failed"
-      );
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <main
-      style={{
-        maxWidth: "400px",
-        margin: "50px auto",
-        padding: "20px",
-      }}
-    >
-      <h1 style={{ textAlign: "center" }}>
-        Login
-      </h1>
+    <main style={pageStyle}>
+      <section style={cardStyle}>
+        <p style={smallLabelStyle}>Riani Shop</p>
 
-      <form onSubmit={handleLogin}>
+        <h1 style={titleStyle}>Login</h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginBottom: "15px",
-          }}
-        />
+        <p style={subtitleStyle}>
+          Sign in to access your account.
+        </p>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginBottom: "15px",
-          }}
-        />
+        {error && (
+          <div style={errorMessageStyle}>{error}</div>
+        )}
 
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "12px",
-            cursor: "pointer",
-          }}
-        >
-          Login
-        </button>
+        <form onSubmit={handleLogin} style={formStyle}>
+          <div style={formGroupStyle}>
+            <label htmlFor="email" style={labelStyle}>
+              Email
+            </label>
 
-      </form>
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
+              style={inputStyle}
+              autoComplete="email"
+              required
+            />
+          </div>
+
+          <div style={formGroupStyle}>
+            <label htmlFor="password" style={labelStyle}>
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(event) =>
+                setPassword(event.target.value)
+              }
+              style={inputStyle}
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...buttonStyle,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+      </section>
     </main>
   );
 }
+
+const pageStyle = {
+  minHeight: "70vh",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "flex-start",
+  padding: "70px 20px",
+  backgroundColor: "#f8f8f8",
+};
+
+const cardStyle = {
+  width: "100%",
+  maxWidth: "480px",
+  padding: "35px",
+  border: "1px solid #e2e2e2",
+  borderRadius: "12px",
+  backgroundColor: "#ffffff",
+  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.06)",
+};
+
+const smallLabelStyle = {
+  margin: "0 0 7px",
+  color: "#777777",
+  fontSize: "12px",
+  fontWeight: "700",
+  textTransform: "uppercase",
+  letterSpacing: "1px",
+};
+
+const titleStyle = {
+  margin: 0,
+  fontSize: "40px",
+};
+
+const subtitleStyle = {
+  margin: "9px 0 25px",
+  color: "#666666",
+};
+
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+};
+
+const formGroupStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+};
+
+const labelStyle = {
+  fontSize: "14px",
+  fontWeight: "700",
+};
+
+const inputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "14px 15px",
+  border: "1px solid #cccccc",
+  borderRadius: "7px",
+  fontSize: "15px",
+};
+
+const buttonStyle = {
+  width: "100%",
+  padding: "14px",
+  border: "none",
+  borderRadius: "7px",
+  backgroundColor: "#111111",
+  color: "#ffffff",
+  fontSize: "15px",
+  fontWeight: "700",
+};
+
+const errorMessageStyle = {
+  marginBottom: "20px",
+  padding: "13px 15px",
+  borderRadius: "7px",
+  backgroundColor: "#ffe7e7",
+  color: "#b00020",
+};
 
 export default Login;

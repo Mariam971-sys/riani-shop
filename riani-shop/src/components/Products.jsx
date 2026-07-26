@@ -8,12 +8,26 @@ function Products({
 }) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState(initialSearch);
+  const [activeCategory, setActiveCategory] =
+    useState(selectedCategory);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const categories = [
+    "All",
+    "Women",
+    "Men",
+    "Shoes",
+    "Accessories",
+  ];
 
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
+
+  useEffect(() => {
+    setActiveCategory(selectedCategory);
+  }, [selectedCategory]);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -26,10 +40,13 @@ function Products({
         );
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
+          const errorData = await response
+            .json()
+            .catch(() => null);
 
           throw new Error(
-            errorData?.message || "Failed to fetch products"
+            errorData?.message ||
+              "Failed to fetch products"
           );
         }
 
@@ -61,7 +78,13 @@ function Products({
       .trim()
       .toLowerCase();
 
-    const productCategory = String(product.category || "")
+    const productCategory = String(
+      product.category || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const productBrand = String(product.brand || "")
       .trim()
       .toLowerCase();
 
@@ -69,7 +92,7 @@ function Products({
       .trim()
       .toLowerCase();
 
-    const selected = String(selectedCategory || "All")
+    const selected = String(activeCategory || "All")
       .trim()
       .toLowerCase();
 
@@ -77,9 +100,7 @@ function Products({
       searchText === "" ||
       productName.includes(searchText) ||
       productCategory.includes(searchText) ||
-      String(product.brand || "")
-        .toLowerCase()
-        .includes(searchText);
+      productBrand.includes(searchText);
 
     let matchesCategory = true;
 
@@ -88,13 +109,13 @@ function Products({
         matchesCategory =
           productCategory === "women" ||
           productCategory === "woman" ||
-          productCategory.includes("women clothing") ||
+          productCategory.includes("women") ||
           productCategory.includes("female");
       } else if (selected === "men") {
         matchesCategory =
           productCategory === "men" ||
           productCategory === "man" ||
-          productCategory.includes("men clothing") ||
+          productCategory.includes("men") ||
           productCategory.includes("male");
       } else if (selected === "shoes") {
         matchesCategory =
@@ -110,7 +131,8 @@ function Products({
           productCategory.includes("watch") ||
           productCategory.includes("jewelry");
       } else {
-        matchesCategory = productCategory === selected;
+        matchesCategory =
+          productCategory === selected;
       }
     }
 
@@ -119,26 +141,16 @@ function Products({
 
   if (loading) {
     return (
-      <h2
-        style={{
-          textAlign: "center",
-          marginTop: "40px",
-        }}
-      >
-        Loading...
-      </h2>
+      <div className="products-status">
+        <h2>Loading products...</h2>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "40px",
-        }}
-      >
-        <h2 style={{ color: "red" }}>
+      <div className="products-status">
+        <h2 className="products-error">
           Unable to load products.
         </h2>
 
@@ -149,69 +161,89 @@ function Products({
 
   return (
     <section className="products">
-      <div className="products-title">
-        <p>FEATURED PRODUCTS</p>
+      <div className="products-container">
+        <div className="products-title">
+          <h2>
+            {initialSearch
+              ? initialSearch
+              : activeCategory === "All"
+              ? "Most Popular Products"
+              : `${activeCategory} Products`}
+          </h2>
 
-        <h2>
-          {initialSearch
-            ? initialSearch
-            : selectedCategory === "All"
-            ? "Most Popular Products"
-            : `${selectedCategory} Products`}
-        </h2>
-      </div>
-
-      <div className="search-box">
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(event) =>
-            setSearch(event.target.value)
-          }
-        />
-      </div>
-
-      {filteredProducts.length > 0 ? (
-        <div className="products-grid">
-          {filteredProducts.map((product) => {
-            const productId = product._id || product.id;
-
-            const productImage =
-              product.images?.[0] ||
-              product.image ||
-              "";
-
-            const productPrice =
-              product.isOnSale &&
-              Number(product.salePrice) > 0
-                ? product.salePrice
-                : product.price;
-
-            return (
-              <ProductCard
-                key={productId}
-                id={productId}
-                image={productImage}
-                images={product.images}
-                category={product.category}
-                brand={product.brand}
-                name={product.name}
-                price={productPrice}
-                originalPrice={product.price}
-                isOnSale={product.isOnSale}
-                salePrice={product.salePrice}
-                isFeatured={product.isFeatured}
-                countInStock={product.countInStock}
-              />
-            );
-          })}
+          <div className="title-decoration">
+            <span />
+            <i />
+            <span />
+          </div>
         </div>
-      ) : (
-        <p className="no-products">
-          No products found.
-        </p>
-      )}
+
+        <div className="search-box">
+          <input
+            type="search"
+            placeholder="Search products..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+          />
+        </div>
+
+        <div className="category-buttons">
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              className={
+                activeCategory === category
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setActiveCategory(category)
+              }
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        {filteredProducts.length > 0 ? (
+          <div className="products-grid">
+            {filteredProducts.map((product) => {
+              const productId =
+                product._id || product.id;
+
+              const productImage =
+                product.images?.[0] ||
+                product.image ||
+                "";
+
+              const productPrice =
+                product.isOnSale &&
+                Number(product.salePrice) > 0
+                  ? product.salePrice
+                  : product.price;
+
+              return (
+                <ProductCard
+                  key={productId}
+                  id={productId}
+                  image={productImage}
+                  category={product.category}
+                  brand={product.brand}
+                  name={product.name}
+                  price={productPrice}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <p className="no-products">
+            No products found.
+          </p>
+        )}
+      </div>
     </section>
   );
 }

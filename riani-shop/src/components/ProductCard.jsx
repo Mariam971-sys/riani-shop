@@ -1,83 +1,50 @@
-import { useContext } from "react";
-import { FaHeart } from "react-icons/fa";
-
-import { CartContext } from "../context/CartContext";
-import { WishlistContext } from "../context/WishlistContext";
-
+import { FaHeart, FaStar } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import "../styles/ProductCard.css";
 
 function ProductCard({
   id,
   image,
   category,
+  brand,
   name,
   price,
 }) {
-  const { addToCart } = useContext(CartContext);
+  const navigate = useNavigate();
 
-  const { wishlist, setWishlist } =
-    useContext(WishlistContext);
-
-  const isInWishlist = wishlist.some(
-    (item) => String(item.id) === String(id)
-  );
-
-  function handleAddToCart() {
-    addToCart({
-      id,
-      image,
-      category,
-      name,
-      price,
-    });
-  }
-
-  function toggleWishlist() {
-    if (isInWishlist) {
-      setWishlist(
-        wishlist.filter(
-          (item) => String(item.id) !== String(id)
-        )
-      );
-    } else {
-      setWishlist([
-        ...wishlist,
-        {
-          id,
-          image,
-          category,
-          name,
-          price,
-        },
-      ]);
-    }
+  function handleShopNow() {
+    navigate(`/product/${id}`);
   }
 
   return (
-    <div className="product-card">
+    <article className="product-card">
       <div className="product-image">
+        <img src={image} alt={name} />
+
         <button
           type="button"
-          className={`wishlist-button ${
-            isInWishlist ? "wishlist-active" : ""
-          }`}
-          onClick={toggleWishlist}
-          aria-label="Toggle wishlist"
+          className="wishlist-button"
+          aria-label="Add to wishlist"
         >
           <FaHeart />
         </button>
-
-        <img src={image} alt={name} />
       </div>
 
       <div className="product-info">
         <p className="product-category">
-          {category || "Uncategorized"}
+          {brand ? `${brand} · ` : ""}
+          {category}
         </p>
 
-        <h3 className="product-name">
-          {name}
-        </h3>
+        <h3 className="product-name">{name}</h3>
+
+        <div className="product-rating">
+          <FaStar />
+          <FaStar />
+          <FaStar />
+          <FaStar />
+          <FaStar />
+        </div>
 
         <p className="product-price">
           ${Number(price || 0).toFixed(2)}
@@ -85,13 +52,13 @@ function ProductCard({
 
         <button
           type="button"
-          className="add-cart-button"
-          onClick={handleAddToCart}
+          className="shop-now-button"
+          onClick={handleShopNow}
         >
-          Add To Cart
+          Shop Now
         </button>
       </div>
-    </div>
+    </article>
   );
 }
 

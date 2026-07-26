@@ -17,8 +17,8 @@ const reviewSchema = new mongoose.Schema(
     rating: {
       type: Number,
       required: true,
-      min: [1, "Rating must be at least 1"],
-      max: [5, "Rating cannot be more than 5"],
+      min: 1,
+      max: 5,
     },
 
     comment: {
@@ -74,7 +74,7 @@ const productSchema = new mongoose.Schema(
       type: [String],
       required: [true, "At least one product image is required"],
       validate: {
-        validator: function (images) {
+        validator(images) {
           return Array.isArray(images) && images.length > 0;
         },
         message: "At least one product image is required",
@@ -82,17 +82,21 @@ const productSchema = new mongoose.Schema(
     },
 
     sizes: {
-      type: [String],
-      default: [],
-      enum: [
-        "XS",
-        "S",
-        "M",
-        "L",
-        "XL",
-        "XXL",
-        "One Size",
+      type: [
+        {
+          type: String,
+          enum: [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "One Size",
+          ],
+        },
       ],
+      default: [],
     },
 
     colors: {
@@ -116,14 +120,14 @@ const productSchema = new mongoose.Schema(
     rating: {
       type: Number,
       default: 0,
-      min: [0, "Rating cannot be negative"],
-      max: [5, "Rating cannot be more than 5"],
+      min: 0,
+      max: 5,
     },
 
     numReviews: {
       type: Number,
       default: 0,
-      min: [0, "Number of reviews cannot be negative"],
+      min: 0,
     },
 
     reviews: {
@@ -146,7 +150,7 @@ const productSchema = new mongoose.Schema(
       default: null,
       min: [0, "Sale price cannot be negative"],
       validate: {
-        validator: function (value) {
+        validator(value) {
           if (!this.isOnSale) {
             return true;
           }
@@ -154,12 +158,11 @@ const productSchema = new mongoose.Schema(
           return (
             value !== null &&
             value !== undefined &&
-            value >= 0 &&
             value < this.price
           );
         },
         message:
-          "Sale price is required and must be lower than the regular price",
+          "Sale price must be lower than the regular price",
       },
     },
   },

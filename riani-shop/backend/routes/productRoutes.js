@@ -14,11 +14,11 @@ const {
   admin,
 } = require("../middleware/authMiddleware");
 
-// Qof kasta wuu arki karaa products-ka
+// Public routes
 router.get("/", getProducts);
 router.get("/:id", getProductById);
 
-// Admin keliya ayaa samayn kara
+// Admin routes
 router.post("/", protect, admin, createProduct);
 router.put("/:id", protect, admin, updateProduct);
 router.delete("/:id", protect, admin, deleteProduct);

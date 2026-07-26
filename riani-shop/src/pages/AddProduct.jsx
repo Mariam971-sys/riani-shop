@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -13,7 +13,7 @@ function AddProduct() {
     brand: "Riani",
     material: "",
     countInStock: "",
-    images: [""],
+    imageUrls: [""],
     sizes: [],
     colors: [],
     isFeatured: false,
@@ -21,6 +21,8 @@ function AddProduct() {
     salePrice: "",
   });
 
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,6 +47,14 @@ function AddProduct() {
     "Brown",
     "Grey",
   ];
+
+  useEffect(() => {
+    return () => {
+      filePreviews.forEach((preview) => {
+        URL.revokeObjectURL(preview);
+      });
+    };
+  }, [filePreviews]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -77,32 +87,108 @@ function AddProduct() {
     }));
   }
 
-  function handleImageChange(index, value) {
+  function handleImageUrlChange(index, value) {
     setFormData((previousData) => {
-      const updatedImages = [...previousData.images];
-      updatedImages[index] = value;
+      const updatedImageUrls = [...previousData.imageUrls];
+
+      updatedImageUrls[index] = value;
 
       return {
         ...previousData,
-        images: updatedImages,
+        imageUrls: updatedImageUrls,
       };
     });
   }
 
-  function addImageField() {
+  function addImageUrlField() {
     setFormData((previousData) => ({
       ...previousData,
-      images: [...previousData.images, ""],
+      imageUrls: [...previousData.imageUrls, ""],
     }));
   }
 
-  function removeImageField(index) {
-    setFormData((previousData) => ({
-      ...previousData,
-      images: previousData.images.filter(
+  function removeImageUrlField(index) {
+    setFormData((previousData) => {
+      const updatedImageUrls = previousData.imageUrls.filter(
         (_, imageIndex) => imageIndex !== index
-      ),
-    }));
+      );
+
+      return {
+        ...previousData,
+        imageUrls:
+          updatedImageUrls.length > 0 ? updatedImageUrls : [""],
+      };
+    });
+  }
+
+  function handleFileChange(event) {
+    const newFiles = Array.from(event.target.files || []);
+
+    if (newFiles.length === 0) {
+      return;
+    }
+
+    const invalidFile = newFiles.find(
+      (file) => !file.type.startsWith("image/")
+    );
+
+    if (invalidFile) {
+      setError("Fadlan sawir keliya dooro.");
+      event.target.value = "";
+      return;
+    }
+
+    const tooLargeFile = newFiles.find(
+      (file) => file.size > 5 * 1024 * 1024
+    );
+
+    if (tooLargeFile) {
+      setError(
+        `${tooLargeFile.name} wuxuu ka weyn yahay 5 MB.`
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const combinedFiles = [...selectedFiles, ...newFiles];
+
+    if (combinedFiles.length > 10) {
+      setError("Ugu badnaan waxaad dooran kartaa 10 sawir.");
+      event.target.value = "";
+      return;
+    }
+
+    filePreviews.forEach((preview) => {
+      URL.revokeObjectURL(preview);
+    });
+
+    const updatedPreviews = combinedFiles.map((file) =>
+      URL.createObjectURL(file)
+    );
+
+    setSelectedFiles(combinedFiles);
+    setFilePreviews(updatedPreviews);
+    setError("");
+
+    event.target.value = "";
+  }
+
+  function removeSelectedFile(index) {
+    const updatedFiles = selectedFiles.filter(
+      (_, fileIndex) => fileIndex !== index
+    );
+
+    filePreviews.forEach((preview) => {
+      URL.revokeObjectURL(preview);
+    });
+
+    const updatedPreviews = updatedFiles.map((file) =>
+      URL.createObjectURL(file)
+    );
+
+    setSelectedFiles(updatedFiles);
+    setFilePreviews(updatedPreviews);
   }
 
   async function handleSubmit(event) {
@@ -117,21 +203,37 @@ function AddProduct() {
       return;
     }
 
-    const cleanImages = formData.images
-      .map((image) => image.trim())
+    const cleanImageUrls = formData.imageUrls
+      .map((imageUrl) => imageUrl.trim())
       .filter(Boolean);
 
-    if (cleanImages.length === 0) {
-      setError("Fadlan geli ugu yaraan hal sawir.");
+    if (
+      cleanImageUrls.length === 0 &&
+      selectedFiles.length === 0
+    ) {
+      setError(
+        "Fadlan geli ugu yaraan hal Image URL ama sawir ka dooro Desktop-ka."
+      );
+
       return;
     }
 
-    if (Number(formData.price) < 0) {
+    const regularPrice = Number(
+      String(formData.price).replace(",", ".")
+    );
+
+    const stockAmount = Number(formData.countInStock);
+
+    const salePrice = Number(
+      String(formData.salePrice).replace(",", ".")
+    );
+
+    if (!Number.isFinite(regularPrice) || regularPrice < 0) {
       setError("Qiimaha product-ka sax ma aha.");
       return;
     }
 
-    if (Number(formData.countInStock) < 0) {
+    if (!Number.isFinite(stockAmount) || stockAmount < 0) {
       setError("Stock-ku ma noqon karo tiro taban.");
       return;
     }
@@ -139,53 +241,99 @@ function AddProduct() {
     if (
       formData.isOnSale &&
       (formData.salePrice === "" ||
-        Number(formData.salePrice) >= Number(formData.price))
+        !Number.isFinite(salePrice) ||
+        salePrice < 0 ||
+        salePrice >= regularPrice)
     ) {
       setError(
         "Sale price waa inuu ka hooseeyaa qiimaha caadiga ah."
       );
+
       return;
     }
 
-    const productData = {
-      name: formData.name.trim(),
-      price: Number(String(formData.price).replace(",", ".")),
-      description: formData.description.trim(),
-      category: formData.category,
-      brand: formData.brand.trim() || "Riani",
-      material: formData.material.trim(),
-      countInStock: Number(formData.countInStock),
-      images: cleanImages,
-      sizes: formData.sizes,
-      colors: formData.colors,
-      isFeatured: formData.isFeatured,
-      isOnSale: formData.isOnSale,
-      salePrice: formData.isOnSale
-        ? Number(String(formData.salePrice).replace(",", "."))
-        : null,
-    };
+    const requestData = new FormData();
+
+    requestData.append("name", formData.name.trim());
+    requestData.append("price", String(regularPrice));
+
+    requestData.append(
+      "description",
+      formData.description.trim()
+    );
+
+    requestData.append("category", formData.category);
+
+    requestData.append(
+      "brand",
+      formData.brand.trim() || "Riani"
+    );
+
+    requestData.append(
+      "material",
+      formData.material.trim()
+    );
+
+    requestData.append(
+      "countInStock",
+      String(stockAmount)
+    );
+
+    requestData.append(
+      "images",
+      JSON.stringify(cleanImageUrls)
+    );
+
+    requestData.append(
+      "sizes",
+      JSON.stringify(formData.sizes)
+    );
+
+    requestData.append(
+      "colors",
+      JSON.stringify(formData.colors)
+    );
+
+    requestData.append(
+      "isFeatured",
+      String(formData.isFeatured)
+    );
+
+    requestData.append(
+      "isOnSale",
+      String(formData.isOnSale)
+    );
+
+    requestData.append(
+      "salePrice",
+      formData.isOnSale ? String(salePrice) : ""
+    );
+
+    selectedFiles.forEach((file) => {
+      requestData.append("uploadedImages", file);
+    });
 
     try {
       setLoading(true);
 
       await axios.post(
         "http://localhost:5000/api/products",
-        productData,
+        requestData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
         }
       );
 
       alert("Product added successfully!");
+
       navigate("/admin/products");
-    } catch (error) {
-      console.error("Add product error:", error);
+    } catch (requestError) {
+      console.error("Add product error:", requestError);
 
       setError(
-        error.response?.data?.message ||
+        requestError.response?.data?.message ||
           "Failed to add product."
       );
     } finally {
@@ -203,7 +351,7 @@ function AddProduct() {
         <form onSubmit={handleSubmit}>
           <div style={gridStyle}>
             <div>
-              <label style={labelStyle}>Product name</label>
+              <label style={labelStyle}>Product Name</label>
 
               <input
                 type="text"
@@ -221,9 +369,9 @@ function AddProduct() {
 
               <input
                 type="number"
+                name="price"
                 step="0.01"
                 min="0"
-                name="price"
                 placeholder="Price"
                 value={formData.price}
                 onChange={handleChange}
@@ -246,6 +394,7 @@ function AddProduct() {
                 <option value="Men">Men</option>
                 <option value="Kids">Kids</option>
                 <option value="Shoes">Shoes</option>
+
                 <option value="Accessories">
                   Accessories
                 </option>
@@ -283,8 +432,8 @@ function AddProduct() {
 
               <input
                 type="number"
-                min="0"
                 name="countInStock"
+                min="0"
                 placeholder="Stock"
                 value={formData.countInStock}
                 onChange={handleChange}
@@ -312,16 +461,72 @@ function AddProduct() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={sectionTitleStyle}>Product images</h2>
+            <h2 style={sectionTitleStyle}>
+              Upload Images From Desktop
+            </h2>
 
-            {formData.images.map((image, index) => (
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={handleFileChange}
+              style={fileInputStyle}
+            />
+
+            <p style={helpTextStyle}>
+              Waxaad dooran kartaa ilaa 10 sawir. Sawir kasta
+              ugu badnaan waa 5 MB.
+            </p>
+
+            {filePreviews.length > 0 && (
+              <div style={previewGridStyle}>
+                {filePreviews.map((preview, index) => (
+                  <div
+                    key={`${preview}-${index}`}
+                    style={previewCardStyle}
+                  >
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      style={previewImageStyle}
+                    />
+
+                    <p style={fileNameStyle}>
+                      {selectedFiles[index]?.name}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeSelectedFile(index)
+                      }
+                      style={removePreviewButtonStyle}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={dividerStyle}>
+            <span style={dividerTextStyle}>AMA / OR</span>
+          </div>
+
+          <div style={sectionStyle}>
+            <h2 style={sectionTitleStyle}>
+              Add Images Using URLs
+            </h2>
+
+            {formData.imageUrls.map((imageUrl, index) => (
               <div key={index} style={imageRowStyle}>
                 <input
                   type="url"
                   placeholder={`Image URL ${index + 1}`}
-                  value={image}
+                  value={imageUrl}
                   onChange={(event) =>
-                    handleImageChange(
+                    handleImageUrlChange(
                       index,
                       event.target.value
                     )
@@ -332,29 +537,56 @@ function AddProduct() {
                   }}
                 />
 
-                {formData.images.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeImageField(index)}
-                    style={removeButtonStyle}
-                  >
-                    Remove
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    removeImageUrlField(index)
+                  }
+                  style={removeButtonStyle}
+                >
+                  Remove
+                </button>
               </div>
             ))}
 
             <button
               type="button"
-              onClick={addImageField}
+              onClick={addImageUrlField}
               style={secondaryButtonStyle}
             >
-              Add Another Image
+              Add Another URL
             </button>
+
+            <div style={previewGridStyle}>
+              {formData.imageUrls
+                .map((imageUrl, index) => ({
+                  imageUrl: imageUrl.trim(),
+                  index,
+                }))
+                .filter((item) => item.imageUrl)
+                .map((item) => (
+                  <div
+                    key={`${item.imageUrl}-${item.index}`}
+                    style={previewCardStyle}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={`URL preview ${item.index + 1}`}
+                      style={previewImageStyle}
+                      onError={(event) => {
+                        event.currentTarget.style.display =
+                          "none";
+                      }}
+                    />
+                  </div>
+                ))}
+            </div>
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={sectionTitleStyle}>Available sizes</h2>
+            <h2 style={sectionTitleStyle}>
+              Available Sizes
+            </h2>
 
             <div style={optionsStyle}>
               {availableSizes.map((size) => (
@@ -374,7 +606,7 @@ function AddProduct() {
 
           <div style={sectionStyle}>
             <h2 style={sectionTitleStyle}>
-              Available colors
+              Available Colors
             </h2>
 
             <div style={optionsStyle}>
@@ -402,10 +634,15 @@ function AddProduct() {
                 onChange={handleChange}
               />
 
-              Featured product
+              Featured Product
             </label>
 
-            <label style={checkboxStyle}>
+            <label
+              style={{
+                ...checkboxStyle,
+                marginTop: "12px",
+              }}
+            >
               <input
                 type="checkbox"
                 name="isOnSale"
@@ -413,23 +650,23 @@ function AddProduct() {
                 onChange={handleChange}
               />
 
-              Product is on sale
+              Product Is On Sale
             </label>
 
             {formData.isOnSale && (
               <div style={{ marginTop: "15px" }}>
-                <label style={labelStyle}>Sale price</label>
+                <label style={labelStyle}>Sale Price</label>
 
                 <input
                   type="number"
+                  name="salePrice"
                   step="0.01"
                   min="0"
-                  name="salePrice"
                   placeholder="Sale price"
                   value={formData.salePrice}
                   onChange={handleChange}
                   style={inputStyle}
-                  required={formData.isOnSale}
+                  required
                 />
               </div>
             )}
@@ -455,7 +692,7 @@ function AddProduct() {
 }
 
 const pageStyle = {
-  minHeight: "80vh",
+  minHeight: "100vh",
   padding: "50px 20px",
   backgroundColor: "#f6f6f6",
 };
@@ -506,6 +743,85 @@ const inputStyle = {
   fontSize: "15px",
 };
 
+const fileInputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "15px",
+  border: "2px dashed #aaaaaa",
+  borderRadius: "8px",
+  backgroundColor: "#fafafa",
+  cursor: "pointer",
+};
+
+const helpTextStyle = {
+  marginTop: "8px",
+  color: "#666666",
+  fontSize: "14px",
+};
+
+const previewGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: "15px",
+  marginTop: "20px",
+};
+
+const previewCardStyle = {
+  padding: "10px",
+  border: "1px solid #dddddd",
+  borderRadius: "8px",
+  backgroundColor: "#ffffff",
+};
+
+const previewImageStyle = {
+  width: "100%",
+  height: "150px",
+  objectFit: "cover",
+  borderRadius: "6px",
+};
+
+const fileNameStyle = {
+  margin: "8px 0",
+  fontSize: "13px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const removePreviewButtonStyle = {
+  width: "100%",
+  padding: "8px",
+  border: "none",
+  borderRadius: "5px",
+  backgroundColor: "#b00020",
+  color: "#ffffff",
+  cursor: "pointer",
+};
+
+const dividerStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  margin: "40px 0 10px",
+  borderTop: "1px solid #dddddd",
+};
+
+const dividerTextStyle = {
+  padding: "0 15px",
+  backgroundColor: "#ffffff",
+  color: "#555555",
+  fontWeight: "700",
+  transform: "translateY(-50%)",
+};
+
+const imageRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  marginBottom: "12px",
+};
+
 const optionsStyle = {
   display: "flex",
   flexWrap: "wrap",
@@ -520,13 +836,6 @@ const checkboxStyle = {
   border: "1px solid #dddddd",
   borderRadius: "6px",
   cursor: "pointer",
-};
-
-const imageRowStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  marginBottom: "12px",
 };
 
 const submitButtonStyle = {

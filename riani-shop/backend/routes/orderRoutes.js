@@ -7,7 +7,10 @@ const {
   getOrders,
   getMyOrders,
   getOrderById,
+  updateOrderStatus,
+  markOrderAsPaid,
   markAsDelivered,
+  deleteOrder,
 } = require("../controllers/orderController");
 
 const {
@@ -15,34 +18,47 @@ const {
   admin,
 } = require("../middleware/authMiddleware");
 
-// @route   POST /api/orders
-// @desc    Create new order
-// @access  Private
+// POST /api/orders
+// User: samee order cusub
 router.post("/", protect, createOrder);
 
-// @route   GET /api/orders/myorders
-// @desc    Get logged-in user's orders
-// @access  Private
+// GET /api/orders/myorders
+// User: arag orders-kiisa
+// Waa inuu ka horreeyaa /:id
 router.get("/myorders", protect, getMyOrders);
 
-// @route   GET /api/orders
-// @desc    Get all orders
-// @access  Admin
+// GET /api/orders
+// Admin: arag dhammaan orders
 router.get("/", protect, admin, getOrders);
 
-// @route   GET /api/orders/:id
-// @desc    Get one order by ID
-// @access  Private
+// GET /api/orders/:id
+// User-ka order-ka leh ama admin
 router.get("/:id", protect, getOrderById);
 
-// @route   PUT /api/orders/:id/deliver
-// @desc    Mark order as delivered
-// @access  Admin
+// PUT /api/orders/:id/pay
+// Order-ka calaamadee inuu paid yahay
+router.put("/:id/pay", protect, markOrderAsPaid);
+
+// PUT /api/orders/:id/status
+// Admin: beddel status
+router.put(
+  "/:id/status",
+  protect,
+  admin,
+  updateOrderStatus
+);
+
+// PUT /api/orders/:id/deliver
+// Admin: calaamadee delivered
 router.put(
   "/:id/deliver",
   protect,
   admin,
   markAsDelivered
 );
+
+// DELETE /api/orders/:id
+// Admin: masax order
+router.delete("/:id", protect, admin, deleteOrder);
 
 module.exports = router;

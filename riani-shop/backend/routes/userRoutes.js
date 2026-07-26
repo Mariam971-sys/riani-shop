@@ -2,27 +2,39 @@ const express = require("express");
 
 const router = express.Router();
 
-// Controllers
 const {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile,
   getUsers,
+  getUserById,
+  updateUserByAdmin,
+  deleteUser,
 } = require("../controllers/userController");
 
-// Middleware
-const { protect, admin } = require("../middleware/authMiddleware");
+const {
+  protect,
+  admin,
+} = require("../middleware/authMiddleware");
 
-// Register
+// Public routes
 router.post("/register", registerUser);
-
-// Login
 router.post("/login", loginUser);
 
-// Profile
-router.get("/profile", protect, getUserProfile);
+// Logged-in user routes
+router
+  .route("/profile")
+  .get(protect, getUserProfile)
+  .put(protect, updateUserProfile);
 
-// Admin - Get all users
+// Admin routes
 router.get("/", protect, admin, getUsers);
+
+router
+  .route("/:id")
+  .get(protect, admin, getUserById)
+  .put(protect, admin, updateUserByAdmin)
+  .delete(protect, admin, deleteUser);
 
 module.exports = router;

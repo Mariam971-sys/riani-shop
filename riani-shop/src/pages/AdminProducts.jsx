@@ -1,46 +1,93 @@
-import { useEffect, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+import { UserContext } from "../context/UserContext";
 import "../styles/AdminProducts.css";
+
+const API_URL = "http://localhost:5000/api/products";
 
 function AdminProducts() {
   const navigate = useNavigate();
+  const { user, logout } = useContext(UserContext);
 
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (!user.isAdmin) {
+      navigate("/");
+      return;
+    }
+
+    fetchProducts();
+  }, [user, navigate]);
+
+  function getToken() {
+    return localStorage.getItem("token") || user?.token || "";
+  }
+
+  function getAuthConfig() {
+    return {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    };
+  }
+
+  function handleAuthError(currentError) {
+    const status = currentError.response?.status;
+
+    if (status === 401 || status === 403) {
+      logout();
+      navigate("/login");
+      return true;
+    }
+
+    return false;
+  }
 
   async function fetchProducts() {
     try {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        "http://localhost:5000/api/products"
-      );
+      const { data } = await axios.get(API_URL);
 
-      const productsData = Array.isArray(response.data)
-        ? response.data
-        : response.data.products || [];
+      const productsData = Array.isArray(data)
+        ? data
+        : Array.isArray(data.products)
+        ? data.products
+        : [];
 
       setProducts(productsData);
-    } catch (error) {
-      console.error("Fetch products error:", error);
+    } catch (currentError) {
+      console.error("Fetch products error:", currentError);
 
       setError(
-        error.response?.data?.message ||
-          "Products-ka lama soo qaadi karin."
+        currentError.response?.data?.message ||
+          "Products could not be loaded."
       );
     } finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   async function handleDelete(productId, productName) {
     const confirmed = window.confirm(
@@ -51,22 +98,14 @@ function AdminProducts() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      alert("Please login as admin first.");
-      navigate("/login");
-      return;
-    }
-
     try {
+      setDeletingId(productId);
+      setError("");
+      setSuccess("");
+
       await axios.delete(
-        `http://localhost:5000/api/products/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API_URL}/${productId}`,
+        getAuthConfig()
       );
 
       setProducts((currentProducts) =>
@@ -75,67 +114,169 @@ function AdminProducts() {
         )
       );
 
-      alert("Product deleted successfully.");
-    } catch (error) {
-      console.error("Delete product error:", error);
+      setSuccess("Product deleted successfully.");
+    } catch (currentError) {
+      console.error("Delete product error:", currentError);
 
-      alert(
-        error.response?.data?.message ||
+      if (handleAuthError(currentError)) {
+        return;
+      }
+
+      setError(
+        currentError.response?.data?.message ||
           "Product could not be deleted."
       );
+    } finally {
+      setDeletingId("");
     }
   }
 
-  const filteredProducts = products.filter((product) => {
-    const searchText = search.toLowerCase().trim();
+  const filteredProducts = useMemo(() => {
+    const searchText = search.trim().toLowerCase();
+    const selectedCategory = category.trim().toLowerCase();
 
-    const productName = product.name?.toLowerCase() || "";
-    const productCategory =
-      product.category?.toLowerCase() || "";
-    const productBrand = product.brand?.toLowerCase() || "";
+    return products.filter((product) => {
+      const productName = String(
+        product.name || ""
+      ).toLowerCase();
 
-    const matchesSearch =
-      productName.includes(searchText) ||
-      productCategory.includes(searchText) ||
-      productBrand.includes(searchText);
+      const productCategory = String(
+        product.category || ""
+      ).toLowerCase();
 
-    const matchesCategory =
-      category === "All" ||
-      product.category === category;
+      const productBrand = String(
+        product.brand || ""
+      ).toLowerCase();
 
-    return matchesSearch && matchesCategory;
-  });
+      const matchesSearch =
+        !searchText ||
+        productName.includes(searchText) ||
+        productCategory.includes(searchText) ||
+        productBrand.includes(searchText);
 
-  if (loading) {
-    return (
-      <main className="admin-products-page">
-        <h2>Loading products...</h2>
-      </main>
-    );
+      const matchesCategory =
+        selectedCategory === "all" ||
+        productCategory === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, search, category]);
+
+  function getImageUrl(image) {
+    if (!image) {
+      return "";
+    }
+
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://") ||
+      image.startsWith("data:")
+    ) {
+      return image;
+    }
+
+    if (
+      image.startsWith("/uploads") ||
+      image.startsWith("/images")
+    ) {
+      return `http://localhost:5000${image}`;
+    }
+
+    return image;
+  }
+
+  if (!user || !user.isAdmin) {
+    return null;
   }
 
   return (
     <main className="admin-products-page">
       <div className="admin-products-header">
         <div>
+          <p className="admin-small-label">
+            Riani Shop Admin
+          </p>
+
           <h1>Products Management</h1>
+
           <p>Manage all products in the shop.</p>
         </div>
 
-        <button
-          type="button"
-          className="add-product-button"
-          onClick={() =>
-            navigate("/admin/products/add")
-          }
-        >
-          Add Product
-        </button>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            className="refresh-products-button"
+            onClick={fetchProducts}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+
+          <button
+            type="button"
+            className="add-product-button"
+            onClick={() =>
+              navigate("/admin/products/add")
+            }
+          >
+            Add Product
+          </button>
+        </div>
       </div>
+
+      {error && (
+        <div className="error-message">{error}</div>
+      )}
+
+      {success && (
+        <div className="success-message">{success}</div>
+      )}
+
+      <section className="admin-products-summary">
+        <div>
+          <span>Total Products</span>
+          <strong>{products.length}</strong>
+        </div>
+
+        <div>
+          <span>In Stock</span>
+          <strong>
+            {
+              products.filter(
+                (product) =>
+                  Number(product.countInStock || 0) > 0
+              ).length
+            }
+          </strong>
+        </div>
+
+        <div>
+          <span>Out of Stock</span>
+          <strong>
+            {
+              products.filter(
+                (product) =>
+                  Number(product.countInStock || 0) <= 0
+              ).length
+            }
+          </strong>
+        </div>
+
+        <div>
+          <span>On Sale</span>
+          <strong>
+            {
+              products.filter(
+                (product) => product.isOnSale
+              ).length
+            }
+          </strong>
+        </div>
+      </section>
 
       <div className="admin-product-tools">
         <input
-          type="text"
+          type="search"
           placeholder="Search by name, category or brand..."
           value={search}
           onChange={(event) =>
@@ -162,13 +303,16 @@ function AdminProducts() {
         </select>
       </div>
 
-      {error && (
-        <p className="error-message">{error}</p>
-      )}
-
-      {filteredProducts.length === 0 ? (
+      {loading ? (
         <div className="no-products">
-          <p>No products found.</p>
+          <h2>Loading products...</h2>
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="no-products">
+          <h2>No products found</h2>
+          <p>
+            No products match your current search or filter.
+          </p>
         </div>
       ) : (
         <div className="products-table-container">
@@ -188,21 +332,37 @@ function AdminProducts() {
 
             <tbody>
               {filteredProducts.map((product) => {
-                const productImage =
+                const productId =
+                  product._id || product.id;
+
+                const imageValue =
                   Array.isArray(product.images) &&
                   product.images.length > 0
                     ? product.images[0]
                     : product.image || "";
 
+                const productImage =
+                  getImageUrl(imageValue);
+
+                const regularPrice = Number(
+                  product.price || 0
+                );
+
+                const salePrice = Number(
+                  product.salePrice || 0
+                );
+
                 const displayPrice =
-                  product.isOnSale &&
-                  product.salePrice !== null &&
-                  product.salePrice !== undefined
-                    ? product.salePrice
-                    : product.price;
+                  product.isOnSale && salePrice > 0
+                    ? salePrice
+                    : regularPrice;
+
+                const stock = Number(
+                  product.countInStock || 0
+                );
 
                 return (
-                  <tr key={product._id}>
+                  <tr key={productId}>
                     <td>
                       {productImage ? (
                         <img
@@ -227,40 +387,41 @@ function AdminProducts() {
                       )}
                     </td>
 
-                    <td>{product.category}</td>
+                    <td>{product.category || "-"}</td>
 
                     <td>{product.brand || "-"}</td>
 
                     <td>
-                      {product.isOnSale ? (
+                      {product.isOnSale &&
+                      salePrice > 0 ? (
                         <div className="admin-price-wrapper">
                           <span className="old-price">
-                            ${Number(product.price).toFixed(2)}
+                            ${regularPrice.toFixed(2)}
                           </span>
 
                           <span className="sale-price">
-                            ${Number(displayPrice).toFixed(2)}
+                            ${displayPrice.toFixed(2)}
                           </span>
                         </div>
                       ) : (
-                        `$${Number(product.price).toFixed(2)}`
+                        `$${regularPrice.toFixed(2)}`
                       )}
                     </td>
 
                     <td>
                       <span
                         className={
-                          product.countInStock > 0
+                          stock > 0
                             ? "stock-available"
                             : "stock-empty"
                         }
                       >
-                        {product.countInStock}
+                        {stock}
                       </span>
                     </td>
 
                     <td>
-                      {product.countInStock > 0 ? (
+                      {stock > 0 ? (
                         <span className="status-in-stock">
                           In stock
                         </span>
@@ -278,7 +439,7 @@ function AdminProducts() {
                           className="edit-button"
                           onClick={() =>
                             navigate(
-                              `/admin/products/${product._id}/edit`
+                              `/admin/products/${productId}/edit`
                             )
                           }
                         >
@@ -288,14 +449,17 @@ function AdminProducts() {
                         <button
                           type="button"
                           className="delete-button"
+                          disabled={deletingId === productId}
                           onClick={() =>
                             handleDelete(
-                              product._id,
+                              productId,
                               product.name
                             )
                           }
                         >
-                          Delete
+                          {deletingId === productId
+                            ? "Deleting..."
+                            : "Delete"}
                         </button>
                       </div>
                     </td>

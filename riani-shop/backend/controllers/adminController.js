@@ -4,26 +4,43 @@ const Order = require("../models/Order");
 
 const getDashboardStats = async (req, res) => {
   try {
-    const totalProducts = await Product.countDocuments();
-    const totalUsers = await User.countDocuments();
-    const totalOrders = await Order.countDocuments();
-
-    const orders = await Order.find();
+    const [
+      totalProducts,
+      totalUsers,
+      totalOrders,
+      orders,
+      recentOrders,
+    ] = await Promise.all([
+      Product.countDocuments(),
+      User.countDocuments(),
+      Order.countDocuments(),
+      Order.find().select("totalPrice"),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("user", "name email"),
+    ]);
 
     const totalRevenue = orders.reduce(
-      (sum, order) => sum + order.totalPrice,
+      (sum, order) =>
+        sum + Number(order.totalPrice || 0),
       0
     );
 
-    res.json({
+    res.status(200).json({
       totalProducts,
       totalUsers,
       totalOrders,
       totalRevenue,
+      recentOrders,
     });
   } catch (error) {
+    console.error("Dashboard stats error:", error);
+
     res.status(500).json({
-      message: error.message,
+      message:
+        error.message ||
+        "Could not load dashboard statistics.",
     });
   }
 };
