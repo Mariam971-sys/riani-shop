@@ -150,6 +150,8 @@
   font-weight: 700;
 }
 
+/* Account dropdown */
+
 .account-menu {
   position: relative;
 }
@@ -159,21 +161,33 @@
   top: calc(100% + 8px);
   right: 0;
   z-index: 1500;
-  display: none;
+  display: flex;
   flex-direction: column;
   min-width: 200px;
   padding: 10px;
+  box-sizing: border-box;
   border: 1px solid #e5e5e5;
   background-color: #ffffff;
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.14);
 }
 
-.account-menu:hover .account-dropdown {
-  display: flex;
+.account-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 13px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid #e5e5e5;
+  border-left: 1px solid #e5e5e5;
+  background-color: #ffffff;
+  transform: rotate(45deg);
 }
 
 .account-dropdown a,
 .account-dropdown button {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   padding: 11px 12px;
@@ -183,6 +197,7 @@
   color: #222222;
   text-align: left;
   text-decoration: none;
+  font-family: inherit;
   font-size: 13px;
   cursor: pointer;
 }
@@ -191,6 +206,8 @@
 .account-dropdown button:hover {
   background-color: #f5f5f5;
 }
+
+/* Search panel */
 
 .navbar-search-panel {
   width: 100%;
@@ -241,6 +258,8 @@
   display: none;
 }
 
+/* Tablet */
+
 @media (max-width: 1180px) {
   .navbar {
     gap: 18px;
@@ -255,6 +274,8 @@
     font-size: 12px;
   }
 }
+
+/* Mobile navigation */
 
 @media (max-width: 960px) {
   .navbar {
@@ -370,6 +391,8 @@
     cursor: pointer;
   }
 }
+
+/* Small phones */
 
 @media (max-width: 560px) {
   .top-announcement {

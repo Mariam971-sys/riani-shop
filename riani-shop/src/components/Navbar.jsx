@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+
 import {
   FaBars,
   FaTimes,
@@ -22,6 +23,7 @@ function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
 
   const totalItems = cart.reduce(
@@ -33,9 +35,24 @@ function Navbar() {
     setMenuOpen(false);
   }
 
+  function closeAccountMenu() {
+    setAccountOpen(false);
+  }
+
+  function toggleSearch() {
+    setSearchOpen((current) => !current);
+    setAccountOpen(false);
+  }
+
+  function toggleAccountMenu() {
+    setAccountOpen((current) => !current);
+    setSearchOpen(false);
+  }
+
   function handleLogout() {
     logout();
-    closeMenu();
+    setAccountOpen(false);
+    setMenuOpen(false);
     navigate("/login");
   }
 
@@ -66,7 +83,11 @@ function Navbar() {
           <button
             type="button"
             className="mobile-menu-button"
-            onClick={() => setMenuOpen((current) => !current)}
+            onClick={() => {
+              setMenuOpen((current) => !current);
+              setAccountOpen(false);
+              setSearchOpen(false);
+            }}
             aria-label="Open navigation menu"
           >
             {menuOpen ? <FaTimes /> : <FaBars />}
@@ -76,7 +97,10 @@ function Navbar() {
           <NavLink
             to="/"
             className="navbar-logo"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              closeAccountMenu();
+            }}
           >
             RIANI
             <span>SHOP</span>
@@ -185,10 +209,9 @@ function Navbar() {
             <button
               type="button"
               className="navbar-action-button"
-              onClick={() =>
-                setSearchOpen((current) => !current)
-              }
+              onClick={toggleSearch}
               aria-label="Search"
+              aria-expanded={searchOpen}
             >
               <FaSearch />
             </button>
@@ -198,6 +221,7 @@ function Navbar() {
               to="/wishlist"
               className="navbar-action-button"
               aria-label="Wishlist"
+              onClick={closeAccountMenu}
             >
               <FaHeart />
             </NavLink>
@@ -208,46 +232,65 @@ function Navbar() {
                 type="button"
                 className="navbar-action-button account-button"
                 aria-label="Account"
+                aria-expanded={accountOpen}
+                onClick={toggleAccountMenu}
               >
                 <FaUser />
               </button>
 
-              <div className="account-dropdown">
-                {!user ? (
-                  <>
-                    <NavLink to="/login">
-                      Login
-                    </NavLink>
-
-                    <NavLink to="/register">
-                      Register
-                    </NavLink>
-                  </>
-                ) : (
-                  <>
-                    <NavLink to="/profile">
-                      My Account
-                    </NavLink>
-
-                    <NavLink to="/orders">
-                      My Orders
-                    </NavLink>
-
-                    {user.isAdmin && (
-                      <NavLink to="/admin">
-                        Admin Dashboard
+              {accountOpen && (
+                <div className="account-dropdown">
+                  {!user ? (
+                    <>
+                      <NavLink
+                        to="/login"
+                        onClick={closeAccountMenu}
+                      >
+                        Login
                       </NavLink>
-                    )}
 
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </>
-                )}
-              </div>
+                      <NavLink
+                        to="/register"
+                        onClick={closeAccountMenu}
+                      >
+                        Register
+                      </NavLink>
+                    </>
+                  ) : (
+                    <>
+                      <NavLink
+                        to="/profile"
+                        onClick={closeAccountMenu}
+                      >
+                        My Account
+                      </NavLink>
+
+                      <NavLink
+                        to="/orders"
+                        onClick={closeAccountMenu}
+                      >
+                        My Orders
+                      </NavLink>
+
+                      {user.isAdmin && (
+                        <NavLink
+                          to="/admin"
+                          onClick={closeAccountMenu}
+                        >
+                          Admin Dashboard
+                        </NavLink>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Cart */}
@@ -255,6 +298,7 @@ function Navbar() {
               to="/cart"
               className="navbar-action-button cart-action"
               aria-label="Shopping cart"
+              onClick={closeAccountMenu}
             >
               <FaShoppingBag />
 
