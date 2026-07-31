@@ -13,7 +13,7 @@ import {
 import { CartContext } from "../context/CartContext";
 import { UserContext } from "../context/UserContext";
 
-import "../styles/Navbar.css";
+import "../styles/navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -79,7 +79,6 @@ function Navbar() {
 
       <header className="main-header">
         <nav className="navbar">
-          {/* Mobile menu button */}
           <button
             type="button"
             className="mobile-menu-button"
@@ -93,7 +92,6 @@ function Navbar() {
             {menuOpen ? <FaTimes /> : <FaBars />}
           </button>
 
-          {/* Logo */}
           <NavLink
             to="/"
             className="navbar-logo"
@@ -106,7 +104,6 @@ function Navbar() {
             <span>SHOP</span>
           </NavLink>
 
-          {/* Navigation links */}
           <div
             className={`navbar-links ${
               menuOpen ? "navbar-links-open" : ""
@@ -163,7 +160,6 @@ function Navbar() {
               Sale
             </NavLink>
 
-            {/* Mobile account links */}
             <div className="mobile-account-links">
               {!user ? (
                 <>
@@ -203,9 +199,7 @@ function Navbar() {
             </div>
           </div>
 
-          {/* Right side icons */}
           <div className="navbar-actions">
-            {/* Search */}
             <button
               type="button"
               className="navbar-action-button"
@@ -216,7 +210,6 @@ function Navbar() {
               <FaSearch />
             </button>
 
-            {/* Wishlist */}
             <NavLink
               to="/wishlist"
               className="navbar-action-button"
@@ -226,7 +219,6 @@ function Navbar() {
               <FaHeart />
             </NavLink>
 
-            {/* Account */}
             <div className="account-menu">
               <button
                 type="button"
@@ -293,7 +285,6 @@ function Navbar() {
               )}
             </div>
 
-            {/* Cart */}
             <NavLink
               to="/cart"
               className="navbar-action-button cart-action"
@@ -311,7 +302,6 @@ function Navbar() {
           </div>
         </nav>
 
-        {/* Search panel */}
         {searchOpen && (
           <div className="navbar-search-panel">
             <form onSubmit={handleSearchSubmit}>
@@ -333,7 +323,6 @@ function Navbar() {
         )}
       </header>
 
-      {/* Mobile overlay */}
       {menuOpen && (
         <button
           type="button"
