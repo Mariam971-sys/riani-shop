@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install --prefix riani-shop",
+  "buildCommand": "npm run build --prefix riani-shop",
+  "outputDirectory": "riani-shop/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
