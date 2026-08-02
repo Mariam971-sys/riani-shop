@@ -1,12 +1,19 @@
 import { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
 function Login() {
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo =
+    location.state?.from ||
+    new URLSearchParams(location.search).get("redirect") ||
+    "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +35,7 @@ function Login() {
       setLoading(true);
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/users/login",
+        apiUrl("/api/users/login"),
         {
           email: email.trim().toLowerCase(),
           password,
@@ -42,7 +49,7 @@ function Login() {
       if (data.isAdmin) {
         navigate("/admin");
       } else {
-        navigate("/");
+        navigate(redirectTo);
       }
     } catch (currentError) {
       console.error("Login error:", currentError);

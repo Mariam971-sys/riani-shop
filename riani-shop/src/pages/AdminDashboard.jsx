@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ function AdminDashboard() {
       };
 
       const { data } = await axios.get(
-        "http://localhost:5000/api/admin/dashboard",
+        apiUrl("/api/admin/dashboard"),
         config
       );
 

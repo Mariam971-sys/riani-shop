@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { apiUrl } from "../config/api";
 
 const availableSizes = [
   "XS",
@@ -56,7 +57,7 @@ function EditProduct() {
         setError("");
 
         const { data: product } = await axios.get(
-          `http://localhost:5000/api/products/${id}`
+          apiUrl(`/api/products/${id}`)
         );
 
         const productImages =
@@ -253,7 +254,7 @@ function EditProduct() {
       setSaving(true);
 
       await axios.put(
-        `http://localhost:5000/api/products/${id}`,
+        apiUrl(`/api/products/${id}`),
         updatedProduct,
         {
           headers: {

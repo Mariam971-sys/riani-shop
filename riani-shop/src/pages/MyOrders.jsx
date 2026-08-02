@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { apiUrl, mediaUrl } from "../config/api";
 
 function MyOrders() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ function MyOrders() {
 
       try {
         const { data } = await axios.get(
-          "http://localhost:5000/api/orders/myorders",
+          apiUrl("/api/orders/myorders"),
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -409,7 +410,7 @@ function getImageUrl(image) {
   }
 
   if (image.startsWith("/uploads")) {
-    return `http://localhost:5000${image}`;
+    return mediaUrl(image);
   }
 
   return image;

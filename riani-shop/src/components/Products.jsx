@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
+import { apiUrl } from "../config/api";
 import "../styles/Products.css";
 
 function Products({
@@ -36,7 +37,7 @@ function Products({
         setError("");
 
         const response = await fetch(
-          "http://localhost:5000/api/products"
+          apiUrl("/api/products")
         );
 
         if (!response.ok) {

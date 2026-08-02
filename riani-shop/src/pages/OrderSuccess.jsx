@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { mediaUrl } from "../config/api";
 
 function OrderSuccess() {
   const location = useLocation();
@@ -34,7 +35,7 @@ function OrderSuccess() {
     }
 
     if (image.startsWith("/uploads")) {
-      return `http://localhost:5000${image}`;
+      return mediaUrl(image);
     }
 
     return image;

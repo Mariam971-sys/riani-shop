@@ -44,6 +44,28 @@ const protect = async (req, res, next) => {
   }
 };
 
+// Optional auth - logged-in user if token is valid, otherwise guest
+const optionalProtect = async (req, res, next) => {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      const token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select("-password");
+
+      if (user) {
+        req.user = user;
+      }
+    } catch (error) {
+      console.error("Optional auth error:", error.message);
+    }
+  }
+
+  next();
+};
+
 // Admin middleware
 const admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
@@ -57,5 +79,6 @@ const admin = (req, res, next) => {
 
 module.exports = {
   protect,
+  optionalProtect,
   admin,
 };

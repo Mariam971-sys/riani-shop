@@ -2,8 +2,9 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/orders";
+const API_URL = apiUrl("/api/orders");
 
 function AdminOrders() {
   const navigate = useNavigate();

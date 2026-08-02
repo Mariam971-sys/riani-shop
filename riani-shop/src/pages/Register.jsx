@@ -1,12 +1,19 @@
 import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
 function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useContext(UserContext);
+
+  const redirectTo =
+    location.state?.from ||
+    new URLSearchParams(location.search).get("redirect") ||
+    "/";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -63,7 +70,7 @@ function Register() {
       setLoading(true);
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/users/register",
+        apiUrl("/api/users/register"),
         {
           name,
           email,
@@ -76,7 +83,7 @@ function Register() {
       if (data.isAdmin) {
         navigate("/admin");
       } else {
-        navigate("/");
+        navigate(redirectTo);
       }
     } catch (currentError) {
       console.error("Registration error:", currentError);

@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/users";
+const API_URL = apiUrl("/api/users");
 
 function AdminUsers() {
   const navigate = useNavigate();

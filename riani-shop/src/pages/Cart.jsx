@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { mediaUrl } from "../config/api";
 
 function Cart() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ function Cart() {
     }
 
     if (image.startsWith("/uploads")) {
-      return `http://localhost:5000${image}`;
+      return mediaUrl(image);
     }
 
     return image;
@@ -155,7 +156,7 @@ function Cart() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/products/${productId}`)
+                    navigate(`/product/${productId}`)
                   }
                   style={imageButtonStyle}
                   aria-label={`Open ${item.name}`}
@@ -179,7 +180,7 @@ function Cart() {
                   <button
                     type="button"
                     onClick={() =>
-                      navigate(`/products/${productId}`)
+                      navigate(`/product/${productId}`)
                     }
                     style={productNameButtonStyle}
                   >

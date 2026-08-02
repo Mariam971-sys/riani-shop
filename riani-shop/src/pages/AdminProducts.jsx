@@ -8,9 +8,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { UserContext } from "../context/UserContext";
+import { apiUrl, mediaUrl } from "../config/api";
 import "../styles/AdminProducts.css";
 
-const API_URL = "http://localhost:5000/api/products";
+const API_URL = apiUrl("/api/products");
 
 function AdminProducts() {
   const navigate = useNavigate();
@@ -179,7 +180,7 @@ function AdminProducts() {
       image.startsWith("/uploads") ||
       image.startsWith("/images")
     ) {
-      return `http://localhost:5000${image}`;
+      return mediaUrl(image);
     }
 
     return image;

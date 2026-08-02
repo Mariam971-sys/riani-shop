@@ -11,6 +11,7 @@ import {
 import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
+import { apiUrl, mediaUrl } from "../config/api";
 
 import womenJacket from "../assets/images/products/women-jacket.jpg";
 import menJacket from "../assets/images/products/men-jacket.jpg";
@@ -51,7 +52,7 @@ function ProductDetails() {
         setQuantity(1);
 
         const productResponse = await axios.get(
-          `http://localhost:5000/api/products/${id}`
+          apiUrl(`/api/products/${id}`)
         );
 
         const productData = productResponse.data;
@@ -80,7 +81,7 @@ function ProductDetails() {
         );
 
         const allProductsResponse = await axios.get(
-          "http://localhost:5000/api/products"
+          apiUrl("/api/products")
         );
 
         const allProducts = Array.isArray(
@@ -140,7 +141,7 @@ function ProductDetails() {
     }
 
     if (image.startsWith("/uploads")) {
-      return `http://localhost:5000${image}`;
+      return mediaUrl(image);
     }
 
     return image;
@@ -791,7 +792,7 @@ function ProductDetails() {
                   key={item._id}
                   onClick={() =>
                     navigate(
-                      `/products/${item._id}`
+                      `/product/${item._id}`
                     )
                   }
                   style={relatedCardStyle}

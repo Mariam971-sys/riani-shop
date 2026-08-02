@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../context/UserContext";
+import { apiUrl } from "../config/api";
 
 function Profile() {
   const { user, login, logout } = useContext(UserContext);
@@ -77,7 +78,7 @@ function Profile() {
       setLoading(true);
 
       const { data } = await axios.put(
-        "http://localhost:5000/api/users/profile",
+        apiUrl("/api/users/profile"),
         updatedProfile,
         {
           headers: {

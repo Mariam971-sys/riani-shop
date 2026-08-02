@@ -15,12 +15,13 @@ const {
 
 const {
   protect,
+  optionalProtect,
   admin,
 } = require("../middleware/authMiddleware");
 
 // POST /api/orders
-// User: samee order cusub
-router.post("/", protect, createOrder);
+// Guest ama user: samee order cusub
+router.post("/", optionalProtect, createOrder);
 
 // GET /api/orders/myorders
 // User: arag orders-kiisa

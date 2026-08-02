@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { apiUrl } from "../config/api";
 
 function AddProduct() {
   const navigate = useNavigate();
@@ -317,7 +318,7 @@ function AddProduct() {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5000/api/products",
+        apiUrl("/api/products"),
         requestData,
         {
           headers: {

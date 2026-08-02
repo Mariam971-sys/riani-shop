@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { apiUrl, mediaUrl } from "../config/api";
 
 function OrderDetails() {
   const { id } = useParams();
@@ -39,7 +40,7 @@ function OrderDetails() {
         setError("");
 
         const { data } = await axios.get(
-          `http://localhost:5000/api/orders/${id}`,
+          apiUrl(`/api/orders/${id}`),
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -102,7 +103,7 @@ function OrderDetails() {
     }
 
     if (image.startsWith("/uploads")) {
-      return `http://localhost:5000${image}`;
+      return mediaUrl(image);
     }
 
     return image;

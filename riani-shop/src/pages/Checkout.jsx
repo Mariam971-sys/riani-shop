@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
+import { apiUrl, mediaUrl } from "../config/api";
 
 function Checkout() {
   const { cart, clearCart } = useContext(CartContext);
@@ -215,15 +216,6 @@ function Checkout() {
       }
     }
 
-    if (!token) {
-      alert(
-        "Please login before placing an order."
-      );
-
-      navigate("/login");
-      return;
-    }
-
     const orderItems = cart.map((item) => ({
       product:
         item.productId || item._id || item.id,
@@ -300,15 +292,18 @@ function Checkout() {
     try {
       setLoading(true);
 
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const { data } = await axios.post(
-        "http://localhost:5000/api/orders",
+        apiUrl("/api/orders"),
         orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers }
       );
 
       clearCart();
@@ -327,7 +322,10 @@ function Checkout() {
 
       setError(
         requestError.response?.data?.message ||
-          "Order could not be placed. Please try again."
+          (requestError.message === "Network Error" ||
+          !requestError.response
+            ? "Cannot reach the server. Check that the backend API URL is set correctly."
+            : "Order could not be placed. Please try again.")
       );
 
       window.scrollTo({
@@ -376,8 +374,9 @@ function Checkout() {
         <h1 style={titleStyle}>Checkout</h1>
 
         <p style={subtitleStyle}>
-          Enter your shipping details and
-          review your order.
+          Enter your shipping details and review your
+          order. You can place an order as a guest —
+          login is optional.
         </p>
       </div>
 
@@ -979,7 +978,7 @@ function getImageUrl(image) {
   }
 
   if (image.startsWith("/uploads")) {
-    return `http://localhost:5000${image}`;
+    return mediaUrl(image);
   }
 
   return image;

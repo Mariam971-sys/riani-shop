@@ -59,7 +59,7 @@ const createOrder = async (req, res) => {
     }));
 
     const order = await Order.create({
-      user: req.user._id,
+      user: req.user?._id || null,
 
       orderItems: normalizedOrderItems,
 
