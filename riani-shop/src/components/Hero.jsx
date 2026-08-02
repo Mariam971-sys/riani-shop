@@ -24,7 +24,14 @@ function Hero() {
       </div>
 
       <div className="hero-image">
-        <img src={heroImage} alt="Hero" />
+        <img
+          src={heroImage}
+          alt="Riani Shop new fashion collection"
+          width="800"
+          height="650"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
     </section>
   );

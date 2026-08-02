@@ -12,6 +12,13 @@ import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
 import { apiUrl, mediaUrl } from "../config/api";
+import {
+  breadcrumbSchema,
+  organizationSchema,
+  productSchema,
+} from "../seo/schemas";
+import { SITE_NAME, SITE_URL } from "../seo/site";
+import { useSeo } from "../seo/useSeo";
 
 import womenJacket from "../assets/images/products/women-jacket.jpg";
 import menJacket from "../assets/images/products/men-jacket.jpg";
@@ -178,6 +185,80 @@ function ProductDetails() {
     () => getProductImages(product),
     [product]
   );
+
+  const productPath = `/product/${id}`;
+  const productUrl = `${SITE_URL}${productPath}`;
+
+  const seoPrice = useMemo(() => {
+    if (!product) return 0;
+
+    const regular = Number(product.price || 0);
+    const sale =
+      product.salePrice !== null &&
+      product.salePrice !== undefined &&
+      product.salePrice !== ""
+        ? Number(product.salePrice)
+        : null;
+
+    if (
+      product.isOnSale &&
+      sale !== null &&
+      !Number.isNaN(sale) &&
+      sale > 0 &&
+      sale < regular
+    ) {
+      return sale;
+    }
+
+    return regular;
+  }, [product]);
+
+  const productJsonLd = useMemo(() => {
+    if (!product) return [];
+
+    return [
+      organizationSchema(),
+      breadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "Shop", path: "/shop" },
+        ...(product.category
+          ? [
+              {
+                name: product.category,
+                path: `/shop?category=${encodeURIComponent(product.category)}`,
+              },
+            ]
+          : []),
+        { name: product.name, path: productPath },
+      ]),
+      productSchema(product, {
+        url: productUrl,
+        images: productImages,
+        price: seoPrice,
+        originalPrice: Number(product.price || 0),
+      }),
+    ];
+  }, [product, productImages, productPath, productUrl, seoPrice]);
+
+  useSeo({
+    enabled: !loading,
+    title: product
+      ? `${product.name} | ${SITE_NAME}`
+      : `Product Not Found | ${SITE_NAME}`,
+    description: product
+      ? (
+          product.description ||
+          `Buy ${product.name} from ${SITE_NAME}. Premium ${
+            product.category || "fashion"
+          } with style and comfort.`
+        ).slice(0, 160)
+      : "The requested product could not be found at Riani Shop.",
+    path: productPath,
+    image: productImages[0],
+    type: product ? "product" : "website",
+    noindex: !product,
+    jsonLd: product ? productJsonLd : [],
+  });
 
   if (loading) {
     return (

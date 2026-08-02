@@ -17,7 +17,14 @@ function BestSellerCard({
         <span className="sale-badge">SALE</span>
 
         <div className="best-image">
-          <img src={image} alt={name} />
+          <img
+            src={image}
+            alt={name}
+            loading="lazy"
+            decoding="async"
+            width="400"
+            height="480"
+          />
         </div>
 
         <div className="best-info">

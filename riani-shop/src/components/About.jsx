@@ -5,7 +5,14 @@ function About() {
   return (
     <section className="about">
       <div className="about-image">
-        <img src={aboutImage} alt="Riani Shop fashion store" />
+        <img
+          src={aboutImage}
+          alt="Riani Shop fashion store"
+          loading="lazy"
+          decoding="async"
+          width="800"
+          height="600"
+        />
       </div>
 
       <div className="about-content">

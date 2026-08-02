@@ -235,6 +235,8 @@ function Products({
                   brand={product.brand}
                   name={product.name}
                   price={productPrice}
+                  rating={product.rating}
+                  numReviews={product.numReviews}
                 />
               );
             })}

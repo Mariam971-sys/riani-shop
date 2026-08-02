@@ -14,7 +14,14 @@ function CategoryCard({ image, title }) {
       onClick={handleClick}
       style={{ cursor: "pointer" }}
     >
-      <img src={image} alt={title} />
+      <img
+        src={image}
+        alt={title}
+        loading="lazy"
+        decoding="async"
+        width="600"
+        height="750"
+      />
 
       <div className="category-overlay">
         <h3>{title}</h3>

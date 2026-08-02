@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://riani-shop.com/sitemap.xml

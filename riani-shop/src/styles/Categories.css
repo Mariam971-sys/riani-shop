@@ -72,9 +72,10 @@
 }
 
 .category-overlay button {
-  color: white;
-  background-color: transparent;
-  border: 1px solid white;
+  color: #ffffff;
+  background-color: #222222;
+  border: none;
+  border-radius: 6px;
 
   padding: 12px 22px;
   font-size: 14px;
@@ -85,8 +86,8 @@
 }
 
 .category-overlay button:hover {
-  color: #222;
-  background-color: white;
+  color: #ffffff;
+  background-color: #000000;
 }
 
 @media (max-width: 1100px) {
