@@ -3,7 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 
 const { corsOptions } = require("./config/cors");
-const { getDbStatus } = require("./config/db");
+const { connectDB, getDbStatus } = require("./config/db");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { apiLimiter, authLimiter } = require("./middleware/rateLimit");
 
@@ -27,6 +27,19 @@ app.options("*", cors(corsOptions()));
 
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+
+// Ensure DB is connected (serverless-safe; no-op if already connected)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    res.status(503).json({
+      message: "Database unavailable",
+    });
+  }
+});
 
 app.use("/api", apiLimiter);
 
