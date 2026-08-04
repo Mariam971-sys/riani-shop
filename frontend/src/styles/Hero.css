@@ -8,6 +8,7 @@
   gap: 60px;
 
   padding: 60px 80px;
+  overflow: hidden;
 }
 
 .hero-content {
@@ -73,9 +74,120 @@
   color: white;
 }
 
+.hero-image {
+  width: 100%;
+  min-width: 0;
+}
+
 .hero-image img {
+  display: block;
   width: 100%;
   height: 650px;
   object-fit: cover;
   border-radius: 12px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .hero {
+    gap: 35px;
+    padding: 45px 35px;
+  }
+
+  .hero-content h1 {
+    font-size: 56px;
+  }
+
+  .hero-image img {
+    height: 520px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hero {
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px 16px 36px;
+    text-align: center;
+    overflow-x: hidden;
+  }
+
+  .hero-image {
+    order: 1;
+    width: 100%;
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 10px;
+  }
+
+  .hero-content {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-small-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .hero-content h1 {
+    font-size: 36px;
+    line-height: 1.12;
+    letter-spacing: -1px;
+    margin: 0 0 16px;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .hero-description {
+    max-width: 360px;
+    margin: 0 auto 24px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  .hero-button,
+  .outline-button {
+    width: 100%;
+    padding: 15px 20px;
+    font-size: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  .hero {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .hero-content h1 {
+    font-size: 31px;
+  }
+
+  .hero-description {
+    font-size: 14px;
+  }
+
+  .hero-image img {
+    height: 250px;
+  }
 }
