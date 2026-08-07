@@ -20,10 +20,21 @@ function Footer() {
           <h3>Shop</h3>
 
           <ul>
-            <li>Women</li>
-            <li>Men</li>
-            <li>Shoes</li>
-            <li>Accessories</li>
+            <li>
+              <a href="/shop?category=women">Women</a>
+            </li>
+
+            <li>
+              <a href="/shop?category=men">Men</a>
+            </li>
+
+            <li>
+              <a href="/shop?category=shoes">Shoes</a>
+            </li>
+
+            <li>
+              <a href="/shop?category=accessories">Accessories</a>
+            </li>
           </ul>
         </div>
 
@@ -31,10 +42,21 @@ function Footer() {
           <h3>Support</h3>
 
           <ul>
-            <li>Contact</li>
-            <li>FAQ</li>
-            <li>Shipping</li>
-            <li>Returns</li>
+            <li>
+              <a href="/contact">Contact</a>
+            </li>
+
+            <li>
+              <a href="/faq">FAQ</a>
+            </li>
+
+            <li>
+              <a href="/shipping">Shipping</a>
+            </li>
+
+            <li>
+              <a href="/returns">Returns</a>
+            </li>
           </ul>
         </div>
 
@@ -42,11 +64,58 @@ function Footer() {
           <h3>Follow Us</h3>
 
           <ul>
-            <li>Facebook</li>
-            <li>Instagram</li>
-            <li>TikTok</li>
-            <li>X (Twitter)</li>
+            <li>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Facebook
+              </a>
+            </li>
+
+            <li>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Instagram
+              </a>
+            </li>
+
+            <li>
+              <a
+                href="https://tiktok.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                TikTok
+              </a>
+            </li>
+
+            <li>
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                X (Twitter)
+              </a>
+            </li>
           </ul>
+        </div>
+
+        <div className="footer-column">
+          <h3>Payment Methods</h3>
+
+          <div className="payment-methods">
+            <span>VISA</span>
+            <span>Mastercard</span>
+            <span>Klarna</span>
+            <span>PayPal</span>
+            <span>Swish</span>
+          </div>
         </div>
 
       </div>
