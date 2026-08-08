@@ -24,6 +24,11 @@ const AdminProducts = lazy(() => import("./pages/AdminProducts"));
 const AddProduct = lazy(() => import("./pages/AddProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
 
+const Contact = lazy(() => import("./pages/Contact"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Shipping = lazy(() => import("./pages/Shipping"));
+const Returns = lazy(() => import("./pages/Returns"));
+
 function PageLoader() {
   return (
     <main
@@ -42,12 +47,14 @@ function PageLoader() {
 function App() {
   return (
     <>
-      <RouteSeo />
       <Navbar />
+
+      <RouteSeo />
 
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
+
           <Route path="/shop" element={<Shop />} />
 
           <Route
@@ -55,27 +62,75 @@ function App() {
             element={<ProductDetails />}
           />
 
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route
+            path="/cart"
+            element={<Cart />}
+          />
+
+          <Route
+            path="/wishlist"
+            element={<Wishlist />}
+          />
+
+          <Route
+            path="/checkout"
+            element={<Checkout />}
+          />
 
           <Route
             path="/order-success"
             element={<OrderSuccess />}
           />
 
-          <Route path="/orders" element={<MyOrders />} />
+          <Route
+            path="/orders"
+            element={<MyOrders />}
+          />
 
           <Route
             path="/orders/:id"
             element={<OrderDetails />}
           />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/login"
+            element={<Login />}
+          />
 
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            path="/register"
+            element={<Register />}
+          />
+
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
+
+          <Route
+            path="/faq"
+            element={<FAQ />}
+          />
+
+          <Route
+            path="/shipping"
+            element={<Shipping />}
+          />
+
+          <Route
+            path="/returns"
+            element={<Returns />}
+          />
+
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
+
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
+          />
 
           <Route
             path="/admin/orders"

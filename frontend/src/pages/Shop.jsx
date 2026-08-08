@@ -4,11 +4,8 @@ import Products from "../components/Products";
 function Shop() {
   const [searchParams] = useSearchParams();
 
-  const category =
-    searchParams.get("category") || "All";
-
-  const search =
-    searchParams.get("search") || "";
+  const category = searchParams.get("category") || "All";
+  const search = searchParams.get("search") || "";
 
   return (
     <main>
