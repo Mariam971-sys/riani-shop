@@ -2,107 +2,85 @@ import { createContext, useEffect, useState } from "react";
 
 export const WishlistContext = createContext();
 
-
 function WishlistProvider({ children }) {
-
-
   const [wishlist, setWishlist] = useState(() => {
-
-    const savedWishlist =
-      localStorage.getItem("wishlist");
-
+    const savedWishlist = localStorage.getItem("wishlist");
 
     return savedWishlist
       ? JSON.parse(savedWishlist)
       : [];
-
   });
 
-
-
-  // Save wishlist
   useEffect(() => {
-
     localStorage.setItem(
       "wishlist",
       JSON.stringify(wishlist)
     );
-
   }, [wishlist]);
 
+  function getProductId(product) {
+    return product?._id || product?.id;
+  }
 
-
-
-
-  // Add wishlist
-  function addToWishlist(product){
-
+  function addToWishlist(product) {
+    const productId = getProductId(product);
 
     const exists = wishlist.some(
       (item) =>
-        String(item.id) === String(product.id)
+        String(getProductId(item)) ===
+        String(productId)
     );
 
-
-    if(!exists){
-
-      setWishlist([
-        ...wishlist,
-        product
+    if (!exists) {
+      setWishlist((currentWishlist) => [
+        ...currentWishlist,
+        product,
       ]);
-
     }
-
   }
 
-
-
-
-
-  // Remove wishlist
-  function removeFromWishlist(id){
-
-
-    const updatedWishlist =
-      wishlist.filter(
-        (item)=>
-        String(item.id) !== String(id)
-      );
-
-
-    setWishlist(updatedWishlist);
-
+  function removeFromWishlist(id) {
+    setWishlist((currentWishlist) =>
+      currentWishlist.filter(
+        (item) =>
+          String(getProductId(item)) !==
+          String(id)
+      )
+    );
   }
 
+  function isInWishlist(id) {
+    return wishlist.some(
+      (item) =>
+        String(getProductId(item)) ===
+        String(id)
+    );
+  }
 
+  function toggleWishlist(product) {
+    const productId = getProductId(product);
 
-
+    if (isInWishlist(productId)) {
+      removeFromWishlist(productId);
+    } else {
+      addToWishlist(product);
+    }
+  }
 
   return (
-
     <WishlistContext.Provider
-
       value={{
-
         wishlist,
-
         setWishlist,
-
         addToWishlist,
-
         removeFromWishlist,
-
+        isInWishlist,
+        toggleWishlist,
       }}
-
     >
-
       {children}
-
     </WishlistContext.Provider>
-
   );
-
 }
-
 
 export default WishlistProvider;
