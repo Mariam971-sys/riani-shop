@@ -4,19 +4,23 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+
 import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
 import { apiUrl, mediaUrl } from "../config/api";
+
 import {
   breadcrumbSchema,
   organizationSchema,
   productSchema,
 } from "../seo/schemas";
+
 import { SITE_NAME, SITE_URL } from "../seo/site";
 import { useSeo } from "../seo/useSeo";
 
@@ -27,27 +31,67 @@ import dress from "../assets/images/products/dress.jpg";
 
 function ProductDetails() {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
-  const { addToCart } = useContext(CartContext);
+  const { addToCart } =
+    useContext(CartContext);
 
-  const [product, setProduct] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [product, setProduct] =
+    useState(null);
 
-  const [selectedImage, setSelectedImage] = useState("");
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [relatedProducts, setRelatedProducts] =
+    useState([]);
 
-  const [quantity, setQuantity] = useState(1);
-
-  const [loading, setLoading] = useState(true);
-  const [addingToCart, setAddingToCart] = useState(false);
-
-  const [error, setError] = useState("");
-  const [selectionError, setSelectionError] =
+  const [selectedImage, setSelectedImage] =
     useState("");
-  const [successMessage, setSuccessMessage] =
+
+  const [selectedSize, setSelectedSize] =
     useState("");
+
+  const [selectedColor, setSelectedColor] =
+    useState("");
+
+  const [quantity, setQuantity] =
+    useState(1);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [addingToCart, setAddingToCart] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [
+    selectionError,
+    setSelectionError,
+  ] = useState("");
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
+
+  /*
+   * =========================================
+   * IDENTIFY PRODUCT TYPE
+   * =========================================
+   */
+
+  const isPrintfulProduct =
+    id?.startsWith("printful-");
+
+  const realProductId = isPrintfulProduct
+    ? id.replace("printful-", "")
+    : id;
+
+  /*
+   * =========================================
+   * LOAD PRODUCT
+   * =========================================
+   */
 
   useEffect(() => {
     async function fetchProduct() {
@@ -58,57 +102,315 @@ function ProductDetails() {
         setSuccessMessage("");
         setQuantity(1);
 
-        const productResponse = await axios.get(
-          apiUrl(`/products/${id}`)
-        );
+        let productData = null;
 
-        const productData = productResponse.data;
+        /*
+         * =========================================
+         * PRINTFUL PRODUCT
+         * =========================================
+         */
+
+        if (isPrintfulProduct) {
+          const response = await axios.get(
+            apiUrl(
+              `/printful/products/${realProductId}`
+            )
+          );
+
+          const result =
+            response.data?.result || {};
+
+          const syncProduct =
+            result.sync_product || {};
+
+          const variants =
+            Array.isArray(
+              result.sync_variants
+            )
+              ? result.sync_variants
+              : [];
+
+          const firstVariant =
+            variants[0] || {};
+
+          /*
+           * Get all Printful images
+           */
+
+          const variantImages =
+            variants.flatMap((variant) => {
+              if (
+                !Array.isArray(variant.files)
+              ) {
+                return [];
+              }
+
+              return variant.files
+                .map(
+                  (file) =>
+                    file.preview_url ||
+                    file.thumbnail_url ||
+                    file.url ||
+                    ""
+                )
+                .filter(Boolean);
+            });
+
+          const images = [
+            syncProduct.thumbnail_url,
+            ...variantImages,
+          ].filter(Boolean);
+
+          /*
+           * Remove duplicate images
+           */
+
+          const uniqueImages = [
+            ...new Set(images),
+          ];
+
+          /*
+           * Get sizes
+           */
+
+          const sizes = [
+            ...new Set(
+              variants
+                .map((variant) => {
+                  if (variant.size) {
+                    return variant.size;
+                  }
+
+                  /*
+                   * Fallback:
+                   * Printful variant name can contain size
+                   */
+                  const name =
+                    variant.name || "";
+
+                  const sizeMatch =
+                    name.match(
+                      /\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i
+                    );
+
+                  return sizeMatch
+                    ? sizeMatch[1]
+                    : "";
+                })
+                .filter(Boolean)
+            ),
+          ];
+
+          /*
+           * Get colors
+           */
+
+          const colors = [
+            ...new Set(
+              variants
+                .map(
+                  (variant) =>
+                    variant.color || ""
+                )
+                .filter(Boolean)
+            ),
+          ];
+
+          productData = {
+            id: `printful-${realProductId}`,
+
+            _id: `printful-${realProductId}`,
+
+            printfulId:
+              Number(realProductId),
+
+            source: "printful",
+
+            name:
+              syncProduct.name ||
+              "Rianova Product",
+
+            category: "Women",
+
+            brand: "Rianova",
+
+            description:
+              "Premium Rianova print-on-demand product, made and fulfilled by Printful.",
+
+            image:
+              uniqueImages[0] ||
+              syncProduct.thumbnail_url ||
+              "",
+
+            images: uniqueImages,
+
+            price: Number(
+              firstVariant.retail_price ||
+                299
+            ),
+
+            salePrice: null,
+
+            isOnSale: false,
+
+            isFeatured: true,
+
+            /*
+             * POD product:
+             * we do not treat it like local warehouse stock.
+             */
+            countInStock: 999,
+
+            sizes,
+
+            colors,
+
+            material: "",
+
+            rating: 5,
+
+            numReviews: 0,
+
+            printfulVariants: variants,
+          };
+        }
+
+        /*
+         * =========================================
+         * NORMAL MONGODB PRODUCT
+         * =========================================
+         */
+
+        else {
+          const response = await axios.get(
+            apiUrl(
+              `/products/${realProductId}`
+            )
+          );
+
+          productData =
+            response.data;
+        }
 
         setProduct(productData);
+
+        /*
+         * =========================================
+         * SET PRODUCT IMAGE
+         * =========================================
+         */
 
         const productImages =
           getProductImages(productData);
 
-        setSelectedImage(productImages[0] || "");
+        setSelectedImage(
+          productImages[0] || ""
+        );
 
-        const sizes = Array.isArray(productData.sizes)
-          ? productData.sizes
-          : [];
+        /*
+         * =========================================
+         * SET SIZE
+         * =========================================
+         */
 
-        const colors = Array.isArray(productData.colors)
-          ? productData.colors
-          : [];
+        const sizes =
+          Array.isArray(
+            productData?.sizes
+          )
+            ? productData.sizes
+            : [];
 
         setSelectedSize(
-          sizes.length === 1 ? sizes[0] : ""
+          sizes.length === 1
+            ? sizes[0]
+            : ""
         );
+
+        /*
+         * =========================================
+         * SET COLOR
+         * =========================================
+         */
+
+        const colors =
+          Array.isArray(
+            productData?.colors
+          )
+            ? productData.colors
+            : [];
 
         setSelectedColor(
-          colors.length === 1 ? colors[0] : ""
+          colors.length === 1
+            ? colors[0]
+            : ""
         );
 
-        const allProductsResponse = await axios.get(
-          apiUrl("/products")
+        /*
+         * =========================================
+         * RELATED PRODUCTS
+         * =========================================
+         */
+
+        try {
+          const allProductsResponse =
+            await axios.get(
+              apiUrl("/products")
+            );
+
+          const normalProducts =
+            Array.isArray(
+              allProductsResponse.data
+            )
+              ? allProductsResponse.data
+              : Array.isArray(
+                    allProductsResponse
+                      .data?.products
+                  )
+                ? allProductsResponse.data
+                    .products
+                : [];
+
+          const related =
+            normalProducts.filter(
+              (item) =>
+                String(
+                  item.category || ""
+                ).toLowerCase() ===
+                  String(
+                    productData.category ||
+                      ""
+                  ).toLowerCase() &&
+                String(
+                  item._id || item.id
+                ) !==
+                  String(
+                    productData._id ||
+                      productData.id
+                  )
+            );
+
+          setRelatedProducts(
+            related.slice(0, 4)
+          );
+        } catch (relatedError) {
+          console.error(
+            "Related products error:",
+            relatedError
+          );
+
+          setRelatedProducts([]);
+        }
+      } catch (fetchError) {
+        console.error(
+          "Fetch product error:",
+          fetchError
         );
 
-        const allProducts = Array.isArray(
-          allProductsResponse.data
-        )
-          ? allProductsResponse.data
-          : allProductsResponse.data.products || [];
-
-        const related = allProducts.filter(
-          (item) =>
-            item.category === productData.category &&
-            item._id !== productData._id
-        );
-
-        setRelatedProducts(related.slice(0, 4));
-      } catch (error) {
-        console.error("Fetch product error:", error);
+        setProduct(null);
 
         setError(
-          error.response?.data?.message ||
+          fetchError.response?.data
+            ?.message ||
             "Product-ka lama helin."
         );
       } finally {
@@ -117,22 +419,59 @@ function ProductDetails() {
     }
 
     fetchProduct();
-  }, [id]);
+  }, [
+    id,
+    isPrintfulProduct,
+    realProductId,
+  ]);
 
-  function getFallbackImage(productItem) {
+  /*
+   * =========================================
+   * FALLBACK IMAGES
+   * =========================================
+   */
+
+  function getFallbackImage(
+    productItem
+  ) {
     const localImages = {
-      "Women's Jacket": womenJacket,
-      "Women Jacket": womenJacket,
-      "Men Jacket": menJacket,
-      "Men's Jacket": menJacket,
-      "White Sneakers": sneakers,
-      Sneakers: sneakers,
-      "Elegant Dress": dress,
-      Dress: dress,
+      "Women's Jacket":
+        womenJacket,
+
+      "Women Jacket":
+        womenJacket,
+
+      "Men Jacket":
+        menJacket,
+
+      "Men's Jacket":
+        menJacket,
+
+      "White Sneakers":
+        sneakers,
+
+      Sneakers:
+        sneakers,
+
+      "Elegant Dress":
+        dress,
+
+      Dress:
+        dress,
     };
 
-    return localImages[productItem?.name] || "";
+    return (
+      localImages[
+        productItem?.name
+      ] || ""
+    );
   }
+
+  /*
+   * =========================================
+   * NORMALIZE IMAGE URL
+   * =========================================
+   */
 
   function normalizeImageUrl(image) {
     if (!image) {
@@ -140,147 +479,296 @@ function ProductDetails() {
     }
 
     if (
-      image.startsWith("http://") ||
-      image.startsWith("https://") ||
+      image.startsWith(
+        "http://"
+      ) ||
+      image.startsWith(
+        "https://"
+      ) ||
       image.startsWith("data:")
     ) {
       return image;
     }
 
-    if (image.startsWith("/uploads")) {
+    if (
+      image.startsWith(
+        "/uploads"
+      )
+    ) {
       return mediaUrl(image);
     }
 
     return image;
   }
 
-  function getProductImages(productItem) {
+  /*
+   * =========================================
+   * PRODUCT IMAGES
+   * =========================================
+   */
+
+  function getProductImages(
+    productItem
+  ) {
     if (!productItem) {
       return [];
     }
 
-    const images = Array.isArray(productItem.images)
-      ? productItem.images
-          .map((image) => normalizeImageUrl(image))
-          .filter(Boolean)
-      : [];
+    const images =
+      Array.isArray(
+        productItem.images
+      )
+        ? productItem.images
+            .map((image) =>
+              normalizeImageUrl(
+                typeof image ===
+                  "string"
+                  ? image
+                  : image?.url ||
+                      image
+                        ?.preview_url ||
+                      image
+                        ?.thumbnail_url ||
+                      ""
+              )
+            )
+            .filter(Boolean)
+        : [];
 
     if (images.length > 0) {
-      return images;
+      return [
+        ...new Set(images),
+      ];
     }
 
     if (productItem.image) {
       return [
-        normalizeImageUrl(productItem.image),
+        normalizeImageUrl(
+          productItem.image
+        ),
       ].filter(Boolean);
     }
 
     const fallbackImage =
-      getFallbackImage(productItem);
+      getFallbackImage(
+        productItem
+      );
 
-    return fallbackImage ? [fallbackImage] : [];
+    return fallbackImage
+      ? [fallbackImage]
+      : [];
   }
 
-  const productImages = useMemo(
-    () => getProductImages(product),
+  const productImages =
+    useMemo(
+      () =>
+        getProductImages(
+          product
+        ),
+      [product]
+    );
+
+  /*
+   * =========================================
+   * SEO
+   * =========================================
+   */
+
+  const productPath =
+    `/product/${id}`;
+
+  const productUrl =
+    `${SITE_URL}${productPath}`;
+
+  const seoPrice = useMemo(
+    () => {
+      if (!product) {
+        return 0;
+      }
+
+      const regular =
+        Number(
+          product.price || 0
+        );
+
+      const sale =
+        product.salePrice !==
+          null &&
+        product.salePrice !==
+          undefined &&
+        product.salePrice !== ""
+          ? Number(
+              product.salePrice
+            )
+          : null;
+
+      if (
+        product.isOnSale &&
+        sale !== null &&
+        !Number.isNaN(sale) &&
+        sale > 0 &&
+        sale < regular
+      ) {
+        return sale;
+      }
+
+      return regular;
+    },
     [product]
   );
 
-  const productPath = `/product/${id}`;
-  const productUrl = `${SITE_URL}${productPath}`;
+  const productJsonLd =
+    useMemo(() => {
+      if (!product) {
+        return [];
+      }
 
-  const seoPrice = useMemo(() => {
-    if (!product) return 0;
+      return [
+        organizationSchema(),
 
-    const regular = Number(product.price || 0);
-    const sale =
-      product.salePrice !== null &&
-      product.salePrice !== undefined &&
-      product.salePrice !== ""
-        ? Number(product.salePrice)
-        : null;
+        breadcrumbSchema([
+          {
+            name: "Home",
+            path: "/",
+          },
 
-    if (
-      product.isOnSale &&
-      sale !== null &&
-      !Number.isNaN(sale) &&
-      sale > 0 &&
-      sale < regular
-    ) {
-      return sale;
-    }
+          {
+            name: "Shop",
+            path: "/shop",
+          },
 
-    return regular;
-  }, [product]);
+          ...(product.category
+            ? [
+                {
+                  name:
+                    product.category,
 
-  const productJsonLd = useMemo(() => {
-    if (!product) return [];
+                  path: `/shop?category=${encodeURIComponent(
+                    product.category
+                  )}`,
+                },
+              ]
+            : []),
 
-    return [
-      organizationSchema(),
-      breadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "Shop", path: "/shop" },
-        ...(product.category
-          ? [
-              {
-                name: product.category,
-                path: `/shop?category=${encodeURIComponent(product.category)}`,
-              },
-            ]
-          : []),
-        { name: product.name, path: productPath },
-      ]),
-      productSchema(product, {
-        url: productUrl,
-        images: productImages,
-        price: seoPrice,
-        originalPrice: Number(product.price || 0),
-      }),
-    ];
-  }, [product, productImages, productPath, productUrl, seoPrice]);
+          {
+            name: product.name,
+            path: productPath,
+          },
+        ]),
+
+        productSchema(
+          product,
+          {
+            url: productUrl,
+            images:
+              productImages,
+
+            price:
+              seoPrice,
+
+            originalPrice:
+              Number(
+                product.price ||
+                  0
+              ),
+          }
+        ),
+      ];
+    }, [
+      product,
+      productImages,
+      productPath,
+      productUrl,
+      seoPrice,
+    ]);
 
   useSeo({
     enabled: !loading,
+
     title: product
       ? `${product.name} | ${SITE_NAME}`
       : `Product Not Found | ${SITE_NAME}`,
+
     description: product
       ? (
           product.description ||
-          `Buy ${product.name} from ${SITE_NAME}. Premium ${
-            product.category || "fashion"
-          } with style and comfort.`
+          `Buy ${product.name} from ${SITE_NAME}.`
         ).slice(0, 160)
-      : "The requested product could not be found at Riani Shop.",
+      : "The requested product could not be found.",
+
     path: productPath,
-    image: productImages[0],
-    type: product ? "product" : "website",
+
+    image:
+      productImages[0],
+
+    type: product
+      ? "product"
+      : "website",
+
     noindex: !product,
-    jsonLd: product ? productJsonLd : [],
+
+    jsonLd: product
+      ? productJsonLd
+      : [],
   });
+
+  /*
+   * =========================================
+   * LOADING
+   * =========================================
+   */
 
   if (loading) {
     return (
-      <main style={statusPageStyle}>
-        <h2>Loading product...</h2>
+      <main
+        style={
+          statusPageStyle
+        }
+      >
+        <h2>
+          Loading product...
+        </h2>
       </main>
     );
   }
 
-  if (error || !product) {
-    return (
-      <main style={statusPageStyle}>
-        <h1>Product not found</h1>
+  /*
+   * =========================================
+   * ERROR
+   * =========================================
+   */
 
-        <p style={{ color: "#666666" }}>
+  if (
+    error ||
+    !product
+  ) {
+    return (
+      <main
+        style={
+          statusPageStyle
+        }
+      >
+        <h1>
+          Product not found
+        </h1>
+
+        <p
+          style={{
+            color:
+              "#666666",
+          }}
+        >
           {error}
         </p>
 
         <button
           type="button"
-          onClick={() => navigate("/shop")}
-          style={primaryButtonStyle}
+          onClick={() =>
+            navigate("/shop")
+          }
+          style={
+            primaryButtonStyle
+          }
         >
           Back to Shop
         </button>
@@ -288,48 +776,115 @@ function ProductDetails() {
     );
   }
 
-  const price = Number(product.price || 0);
+  /*
+   * =========================================
+   * PRICE
+   * =========================================
+   */
+
+  const price =
+    Number(
+      product.price || 0
+    );
 
   const salePrice =
-    product.salePrice !== null &&
-    product.salePrice !== undefined &&
+    product.salePrice !==
+      null &&
+    product.salePrice !==
+      undefined &&
     product.salePrice !== ""
-      ? Number(product.salePrice)
+      ? Number(
+          product.salePrice
+        )
       : null;
 
   const isValidSale =
     product.isOnSale &&
     salePrice !== null &&
-    !Number.isNaN(salePrice) &&
+    !Number.isNaN(
+      salePrice
+    ) &&
     salePrice >= 0 &&
     salePrice < price;
 
-  const currentPrice = isValidSale
-    ? salePrice
-    : price;
+  const currentPrice =
+    isValidSale
+      ? salePrice
+      : price;
 
-  const stock = Number(
-    product.countInStock ?? 0
-  );
+  /*
+   * =========================================
+   * CURRENCY
+   * =========================================
+   */
 
-  const availableSizes = Array.isArray(
-    product.sizes
-  )
-    ? product.sizes
-    : [];
+  function formatPrice(
+    amount
+  ) {
+    const value =
+      Number(amount || 0);
 
-  const availableColors = Array.isArray(
-    product.colors
-  )
-    ? product.colors
-    : [];
+    if (
+      product.source ===
+      "printful"
+    ) {
+      return `${value.toFixed(
+        0
+      )} kr`;
+    }
+
+    return `$${value.toFixed(
+      2
+    )}`;
+  }
+
+  /*
+   * =========================================
+   * STOCK
+   * =========================================
+   */
+
+  const stock =
+    Number(
+      product.countInStock ??
+        0
+    );
+
+  /*
+   * =========================================
+   * OPTIONS
+   * =========================================
+   */
+
+  const availableSizes =
+    Array.isArray(
+      product.sizes
+    )
+      ? product.sizes
+      : [];
+
+  const availableColors =
+    Array.isArray(
+      product.colors
+    )
+      ? product.colors
+      : [];
+
+  /*
+   * =========================================
+   * QUANTITY
+   * =========================================
+   */
 
   function increaseQuantity() {
     setSuccessMessage("");
 
-    if (quantity < stock) {
-      setQuantity((currentQuantity) =>
-        currentQuantity + 1
+    if (
+      quantity < stock
+    ) {
+      setQuantity(
+        (current) =>
+          current + 1
       );
     }
   }
@@ -337,98 +892,236 @@ function ProductDetails() {
   function decreaseQuantity() {
     setSuccessMessage("");
 
-    if (quantity > 1) {
-      setQuantity((currentQuantity) =>
-        currentQuantity - 1
+    if (
+      quantity > 1
+    ) {
+      setQuantity(
+        (current) =>
+          current - 1
       );
     }
   }
 
-  function handleSizeSelect(size) {
+  /*
+   * =========================================
+   * SIZE
+   * =========================================
+   */
+
+  function handleSizeSelect(
+    size
+  ) {
     setSelectedSize(size);
+
     setSelectionError("");
+
     setSuccessMessage("");
   }
 
-  function handleColorSelect(color) {
+  /*
+   * =========================================
+   * COLOR
+   * =========================================
+   */
+
+  function handleColorSelect(
+    color
+  ) {
     setSelectedColor(color);
+
     setSelectionError("");
+
     setSuccessMessage("");
   }
+
+  /*
+   * =========================================
+   * FIND PRINTFUL VARIANT
+   * =========================================
+   */
+
+  function getSelectedPrintfulVariant() {
+    if (
+      product.source !==
+      "printful"
+    ) {
+      return null;
+    }
+
+    const variants =
+      Array.isArray(
+        product.printfulVariants
+      )
+        ? product.printfulVariants
+        : [];
+
+    return (
+      variants.find(
+        (variant) => {
+          const sizeMatches =
+            !selectedSize ||
+            variant.size ===
+              selectedSize ||
+            String(
+              variant.name ||
+                ""
+            ).includes(
+              selectedSize
+            );
+
+          const colorMatches =
+            !selectedColor ||
+            variant.color ===
+              selectedColor;
+
+          return (
+            sizeMatches &&
+            colorMatches
+          );
+        }
+      ) ||
+      variants[0] ||
+      null
+    );
+  }
+
+  /*
+   * =========================================
+   * ADD TO CART
+   * =========================================
+   */
 
   function handleAddToCart() {
     setSelectionError("");
+
     setSuccessMessage("");
 
-    if (stock <= 0) {
+    if (
+      stock <= 0
+    ) {
       setSelectionError(
         "Product-kan hadda stock kuma jiro."
       );
+
       return;
     }
 
     if (
-      availableSizes.length > 0 &&
+      availableSizes.length >
+        0 &&
       !selectedSize
     ) {
       setSelectionError(
         "Fadlan dooro size-ka aad rabto."
       );
+
       return;
     }
 
     if (
-      availableColors.length > 0 &&
+      availableColors.length >
+        0 &&
       !selectedColor
     ) {
       setSelectionError(
         "Fadlan dooro color-ka aad rabto."
       );
+
       return;
     }
 
     try {
       setAddingToCart(true);
 
-      addToCart({
-        id: product._id || product.id,
-        _id: product._id || product.id,
-        productId: product._id || product.id,
+      const printfulVariant =
+        getSelectedPrintfulVariant();
 
-        name: product.name,
-        category: product.category,
-        brand: product.brand,
+      addToCart({
+        id:
+          product._id ||
+          product.id,
+
+        _id:
+          product._id ||
+          product.id,
+
+        productId:
+          product._id ||
+          product.id,
+
+        source:
+          product.source ||
+          "normal",
+
+        printfulId:
+          product.printfulId ||
+          null,
+
+        printfulVariantId:
+          printfulVariant?.id ||
+          null,
+
+        name:
+          product.name,
+
+        category:
+          product.category,
+
+        brand:
+          product.brand,
 
         image:
           selectedImage ||
           productImages[0] ||
           "",
 
-        images: productImages,
+        images:
+          productImages,
 
-        price: currentPrice,
-        originalPrice: price,
+        price:
+          currentPrice,
 
-        isOnSale: isValidSale,
-        salePrice: isValidSale
-          ? salePrice
-          : null,
+        originalPrice:
+          price,
 
-        size: selectedSize || null,
-        selectedSize: selectedSize || null,
+        isOnSale:
+          isValidSale,
 
-        color: selectedColor || null,
-        selectedColor: selectedColor || null,
+        salePrice:
+          isValidSale
+            ? salePrice
+            : null,
+
+        size:
+          selectedSize ||
+          null,
+
+        selectedSize:
+          selectedSize ||
+          null,
+
+        color:
+          selectedColor ||
+          null,
+
+        selectedColor:
+          selectedColor ||
+          null,
 
         quantity,
-        countInStock: stock,
+
+        countInStock:
+          stock,
       });
 
       setSuccessMessage(
         `${product.name} waxaa lagu daray cart-ka.`
       );
-    } catch (error) {
-      console.error("Add to cart error:", error);
+    } catch (cartError) {
+      console.error(
+        "Add to cart error:",
+        cartError
+      );
 
       setSelectionError(
         "Product-ka cart-ka laguma darin."
@@ -438,75 +1131,131 @@ function ProductDetails() {
     }
   }
 
+  /*
+   * =========================================
+   * UI
+   * =========================================
+   */
+
   return (
     <main style={pageStyle}>
       <button
         type="button"
-        onClick={() => navigate(-1)}
-        style={backButtonStyle}
+        onClick={() =>
+          navigate(-1)
+        }
+        style={
+          backButtonStyle
+        }
       >
         ← Back
       </button>
 
-      <section style={productSectionStyle}>
+      <section
+        style={
+          productSectionStyle
+        }
+      >
+        {/* IMAGE AREA */}
+
         <div style={galleryStyle}>
-          <div style={mainImageWrapperStyle}>
+          <div
+            style={
+              mainImageWrapperStyle
+            }
+          >
             {selectedImage ? (
               <img
-                src={selectedImage}
-                alt={product.name}
-                style={mainImageStyle}
-                onError={(event) => {
+                src={
+                  selectedImage
+                }
+                alt={
+                  product.name
+                }
+                style={
+                  mainImageStyle
+                }
+                onError={(
+                  event
+                ) => {
                   event.currentTarget.src =
-                    getFallbackImage(product);
+                    getFallbackImage(
+                      product
+                    );
                 }}
               />
             ) : (
-              <div style={noImageStyle}>
+              <div
+                style={
+                  noImageStyle
+                }
+              >
                 No image available
               </div>
             )}
 
             {isValidSale && (
-              <span style={saleBadgeStyle}>
+              <span
+                style={
+                  saleBadgeStyle
+                }
+              >
                 Sale
               </span>
             )}
 
             {product.isFeatured && (
-              <span style={featuredBadgeStyle}>
+              <span
+                style={
+                  featuredBadgeStyle
+                }
+              >
                 Featured
               </span>
             )}
           </div>
 
-          {productImages.length > 1 && (
-            <div style={thumbnailContainerStyle}>
+          {productImages.length >
+            1 && (
+            <div
+              style={
+                thumbnailContainerStyle
+              }
+            >
               {productImages.map(
-                (image, index) => (
+                (
+                  image,
+                  index
+                ) => (
                   <button
                     key={`${image}-${index}`}
                     type="button"
                     onClick={() =>
-                      setSelectedImage(image)
+                      setSelectedImage(
+                        image
+                      )
                     }
-                    aria-label={`View product image ${
-                      index + 1
-                    }`}
                     style={{
                       ...thumbnailButtonStyle,
+
                       border:
-                        selectedImage === image
-                          ? "2px solid #111111"
-                          : "1px solid #dddddd",
+                        selectedImage ===
+                        image
+                          ? "2px solid #111"
+                          : "1px solid #ddd",
                     }}
                   >
                     <img
-                      src={image}
+                      src={
+                        image
+                      }
                       alt={`${product.name} ${
-                        index + 1
+                        index +
+                        1
                       }`}
-                      style={thumbnailImageStyle}
+                      style={
+                        thumbnailImageStyle
+                      }
                     />
                   </button>
                 )
@@ -515,80 +1264,171 @@ function ProductDetails() {
           )}
         </div>
 
-        <div style={productInfoStyle}>
-          <p style={categoryStyle}>
-            {product.category || "Product"}
+        {/* PRODUCT INFO */}
+
+        <div
+          style={
+            productInfoStyle
+          }
+        >
+          <p
+            style={
+              categoryStyle
+            }
+          >
+            {product.category ||
+              "Product"}
           </p>
 
-          <h1 style={productTitleStyle}>
+          <h1
+            style={
+              productTitleStyle
+            }
+          >
             {product.name}
           </h1>
 
           {product.brand && (
-            <p style={brandStyle}>
-              Brand: <strong>{product.brand}</strong>
+            <p
+              style={
+                brandStyle
+              }
+            >
+              Brand:{" "}
+              <strong>
+                {
+                  product.brand
+                }
+              </strong>
             </p>
           )}
 
-          <div style={ratingStyle}>
+          <div
+            style={
+              ratingStyle
+            }
+          >
             <span>
               {"★".repeat(
                 Math.round(
-                  Number(product.rating || 0)
+                  Number(
+                    product.rating ||
+                      0
+                  )
                 )
               )}
+
               {"☆".repeat(
                 Math.max(
                   0,
                   5 -
                     Math.round(
                       Number(
-                        product.rating || 0
+                        product.rating ||
+                          0
                       )
                     )
                 )
               )}
             </span>
 
-            <span style={reviewCountStyle}>
-              {Number(product.numReviews || 0)}{" "}
+            <span
+              style={
+                reviewCountStyle
+              }
+            >
+              {Number(
+                product.numReviews ||
+                  0
+              )}{" "}
               reviews
             </span>
           </div>
 
-          <div style={priceContainerStyle}>
+          {/* PRICE */}
+
+          <div
+            style={
+              priceContainerStyle
+            }
+          >
             {isValidSale ? (
               <>
-                <span style={salePriceStyle}>
-                  ${salePrice.toFixed(2)}
+                <span
+                  style={
+                    salePriceStyle
+                  }
+                >
+                  {formatPrice(
+                    salePrice
+                  )}
                 </span>
 
-                <span style={oldPriceStyle}>
-                  ${price.toFixed(2)}
+                <span
+                  style={
+                    oldPriceStyle
+                  }
+                >
+                  {formatPrice(
+                    price
+                  )}
                 </span>
               </>
             ) : (
-              <span style={normalPriceStyle}>
-                ${price.toFixed(2)}
+              <span
+                style={
+                  normalPriceStyle
+                }
+              >
+                {formatPrice(
+                  price
+                )}
               </span>
             )}
           </div>
 
-          <p style={descriptionStyle}>
+          <p
+            style={
+              descriptionStyle
+            }
+          >
             {product.description ||
               "High quality product from Riani Shop."}
           </p>
 
-          <div style={productDetailsBoxStyle}>
+          {/* AVAILABILITY */}
+
+          <div
+            style={
+              productDetailsBoxStyle
+            }
+          >
             {product.material && (
-              <p style={detailRowStyle}>
-                <strong>Material:</strong>
-                <span>{product.material}</span>
+              <p
+                style={
+                  detailRowStyle
+                }
+              >
+                <strong>
+                  Material:
+                </strong>
+
+                <span>
+                  {
+                    product.material
+                  }
+                </span>
               </p>
             )}
 
-            <p style={detailRowStyle}>
-              <strong>Availability:</strong>
+            <p
+              style={
+                detailRowStyle
+              }
+            >
+              <strong>
+                Availability:
+              </strong>
 
               <span
                 style={{
@@ -596,144 +1436,192 @@ function ProductDetails() {
                     stock > 0
                       ? "#167329"
                       : "#b00020",
-                  fontWeight: "700",
+
+                  fontWeight:
+                    "700",
                 }}
               >
-                {stock > 0
-                  ? `${stock} in stock`
-                  : "Out of stock"}
+                {product.source ===
+                "printful"
+                  ? "Available"
+                  : stock > 0
+                    ? `${stock} in stock`
+                    : "Out of stock"}
               </span>
             </p>
           </div>
 
-          {availableColors.length > 0 && (
-            <div style={optionSectionStyle}>
-              <div style={optionHeaderStyle}>
-                <h3 style={optionTitleStyle}>
-                  Color
-                </h3>
+          {/* COLORS */}
 
-                {selectedColor && (
-                  <span style={selectedValueStyle}>
-                    {selectedColor}
-                  </span>
+          {availableColors.length >
+            0 && (
+            <div
+              style={
+                optionSectionStyle
+              }
+            >
+              <h3
+                style={
+                  optionTitleStyle
+                }
+              >
+                Color
+              </h3>
+
+              <div
+                style={
+                  optionListStyle
+                }
+              >
+                {availableColors.map(
+                  (color) => (
+                    <button
+                      key={
+                        color
+                      }
+                      type="button"
+                      onClick={() =>
+                        handleColorSelect(
+                          color
+                        )
+                      }
+                      style={{
+                        ...choiceButtonStyle,
+
+                        backgroundColor:
+                          selectedColor ===
+                          color
+                            ? "#111"
+                            : "#fff",
+
+                        color:
+                          selectedColor ===
+                          color
+                            ? "#fff"
+                            : "#111",
+                      }}
+                    >
+                      {color}
+                    </button>
+                  )
                 )}
-              </div>
-
-              <div style={optionListStyle}>
-                {availableColors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() =>
-                      handleColorSelect(color)
-                    }
-                    style={{
-                      ...choiceButtonStyle,
-                      backgroundColor:
-                        selectedColor === color
-                          ? "#111111"
-                          : "#ffffff",
-                      color:
-                        selectedColor === color
-                          ? "#ffffff"
-                          : "#111111",
-                      borderColor:
-                        selectedColor === color
-                          ? "#111111"
-                          : "#cccccc",
-                    }}
-                  >
-                    {color}
-                  </button>
-                ))}
               </div>
             </div>
           )}
 
-          {availableSizes.length > 0 && (
-            <div style={optionSectionStyle}>
-              <div style={optionHeaderStyle}>
-                <h3 style={optionTitleStyle}>
-                  Size
-                </h3>
+          {/* SIZES */}
 
-                {selectedSize && (
-                  <span style={selectedValueStyle}>
-                    {selectedSize}
-                  </span>
+          {availableSizes.length >
+            0 && (
+            <div
+              style={
+                optionSectionStyle
+              }
+            >
+              <h3
+                style={
+                  optionTitleStyle
+                }
+              >
+                Size
+              </h3>
+
+              <div
+                style={
+                  optionListStyle
+                }
+              >
+                {availableSizes.map(
+                  (size) => (
+                    <button
+                      key={
+                        size
+                      }
+                      type="button"
+                      onClick={() =>
+                        handleSizeSelect(
+                          size
+                        )
+                      }
+                      style={{
+                        ...sizeButtonStyle,
+
+                        backgroundColor:
+                          selectedSize ===
+                          size
+                            ? "#111"
+                            : "#fff",
+
+                        color:
+                          selectedSize ===
+                          size
+                            ? "#fff"
+                            : "#111",
+                      }}
+                    >
+                      {size}
+                    </button>
+                  )
                 )}
-              </div>
-
-              <div style={optionListStyle}>
-                {availableSizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() =>
-                      handleSizeSelect(size)
-                    }
-                    style={{
-                      ...sizeButtonStyle,
-                      backgroundColor:
-                        selectedSize === size
-                          ? "#111111"
-                          : "#ffffff",
-                      color:
-                        selectedSize === size
-                          ? "#ffffff"
-                          : "#111111",
-                      borderColor:
-                        selectedSize === size
-                          ? "#111111"
-                          : "#cccccc",
-                    }}
-                  >
-                    {size}
-                  </button>
-                ))}
               </div>
             </div>
           )}
 
-          <div style={quantitySectionStyle}>
-            <h3 style={optionTitleStyle}>
+          {/* QUANTITY */}
+
+          <div
+            style={
+              quantitySectionStyle
+            }
+          >
+            <h3
+              style={
+                optionTitleStyle
+              }
+            >
               Quantity
             </h3>
 
-            <div style={quantityControlStyle}>
+            <div
+              style={
+                quantityControlStyle
+              }
+            >
               <button
                 type="button"
-                onClick={decreaseQuantity}
-                disabled={quantity <= 1}
-                style={{
-                  ...quantityButtonStyle,
-                  opacity:
-                    quantity <= 1 ? 0.5 : 1,
-                }}
+                onClick={
+                  decreaseQuantity
+                }
+                disabled={
+                  quantity <= 1
+                }
+                style={
+                  quantityButtonStyle
+                }
               >
                 −
               </button>
 
-              <span style={quantityValueStyle}>
+              <span
+                style={
+                  quantityValueStyle
+                }
+              >
                 {quantity}
               </span>
 
               <button
                 type="button"
-                onClick={increaseQuantity}
+                onClick={
+                  increaseQuantity
+                }
                 disabled={
                   stock <= 0 ||
                   quantity >= stock
                 }
-                style={{
-                  ...quantityButtonStyle,
-                  opacity:
-                    stock <= 0 ||
-                    quantity >= stock
-                      ? 0.5
-                      : 1,
-                }}
+                style={
+                  quantityButtonStyle
+                }
               >
                 +
               </button>
@@ -741,219 +1629,265 @@ function ProductDetails() {
           </div>
 
           {selectionError && (
-            <p style={errorMessageStyle}>
+            <p
+              style={
+                errorMessageStyle
+              }
+            >
               {selectionError}
             </p>
           )}
 
           {successMessage && (
-            <p style={successMessageStyle}>
+            <p
+              style={
+                successMessageStyle
+              }
+            >
               {successMessage}
             </p>
           )}
 
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={
+              handleAddToCart
+            }
             disabled={
-              stock <= 0 || addingToCart
+              stock <= 0 ||
+              addingToCart
             }
             style={{
               ...addToCartButtonStyle,
+
               opacity:
-                stock <= 0 || addingToCart
+                stock <= 0 ||
+                addingToCart
                   ? 0.6
                   : 1,
-              cursor:
-                stock <= 0 || addingToCart
-                  ? "not-allowed"
-                  : "pointer",
             }}
           >
-            {stock <= 0
-              ? "Out of Stock"
-              : addingToCart
-                ? "Adding..."
-                : "Add To Cart"}
+            {addingToCart
+              ? "Adding..."
+              : "Add To Cart"}
           </button>
 
-          <div style={shippingInfoStyle}>
-            <p>✓ Secure checkout</p>
-            <p>✓ Easy returns</p>
-            <p>✓ Fast delivery</p>
+          <div
+            style={
+              shippingInfoStyle
+            }
+          >
+            <p>
+              ✓ Secure checkout
+            </p>
+
+            <p>
+              ✓ Easy returns
+            </p>
+
+            <p>
+              ✓ Fast delivery
+            </p>
           </div>
         </div>
       </section>
 
-      <section style={descriptionSectionStyle}>
-        <h2 style={sectionHeadingStyle}>
+      {/* PRODUCT INFORMATION */}
+
+      <section
+        style={
+          descriptionSectionStyle
+        }
+      >
+        <h2
+          style={
+            sectionHeadingStyle
+          }
+        >
           Product Information
         </h2>
 
-        <div style={informationGridStyle}>
+        <div
+          style={
+            informationGridStyle
+          }
+        >
           <div>
-            <h3>Description</h3>
+            <h3>
+              Description
+            </h3>
 
-            <p style={informationTextStyle}>
+            <p
+              style={
+                informationTextStyle
+              }
+            >
               {product.description ||
                 "High quality product from Riani Shop."}
             </p>
           </div>
 
           <div>
-            <h3>Details</h3>
+            <h3>
+              Details
+            </h3>
 
-            <p style={informationTextStyle}>
-              <strong>Category:</strong>{" "}
-              {product.category || "-"}
+            <p>
+              <strong>
+                Category:
+              </strong>{" "}
+              {product.category ||
+                "-"}
             </p>
 
-            <p style={informationTextStyle}>
-              <strong>Brand:</strong>{" "}
-              {product.brand || "Riani"}
+            <p>
+              <strong>
+                Brand:
+              </strong>{" "}
+              {product.brand ||
+                "Riani"}
             </p>
 
-            <p style={informationTextStyle}>
-              <strong>Material:</strong>{" "}
-              {product.material || "-"}
+            <p>
+              <strong>
+                Fulfilled by:
+              </strong>{" "}
+              {product.source ===
+              "printful"
+                ? "Printful"
+                : "Riani Shop"}
             </p>
           </div>
         </div>
       </section>
 
-      <section style={relatedSectionStyle}>
-        <div style={relatedHeaderStyle}>
-          <h2 style={sectionHeadingStyle}>
-            Related Products
-          </h2>
+      {/* RELATED PRODUCTS */}
 
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                `/shop?category=${encodeURIComponent(
-                  product.category || ""
-                )}`
-              )
-            }
-            style={viewAllButtonStyle}
+      <section
+        style={
+          relatedSectionStyle
+        }
+      >
+        <h2
+          style={
+            sectionHeadingStyle
+          }
+        >
+          Related Products
+        </h2>
+
+        {relatedProducts.length ===
+        0 ? (
+          <p
+            style={{
+              color:
+                "#666666",
+            }}
           >
-            View All
-          </button>
-        </div>
-
-        {relatedProducts.length === 0 ? (
-          <p style={{ color: "#666666" }}>
             No related products found.
           </p>
         ) : (
-          <div style={relatedGridStyle}>
-            {relatedProducts.map((item) => {
-              const itemImages =
-                getProductImages(item);
+          <div
+            style={
+              relatedGridStyle
+            }
+          >
+            {relatedProducts.map(
+              (item) => {
+                const itemImages =
+                  getProductImages(
+                    item
+                  );
 
-              const itemPrice = Number(
-                item.price || 0
-              );
-
-              const itemSalePrice =
-                item.salePrice !== null &&
-                item.salePrice !== undefined
-                  ? Number(item.salePrice)
-                  : null;
-
-              const itemHasSale =
-                item.isOnSale &&
-                itemSalePrice !== null &&
-                !Number.isNaN(itemSalePrice) &&
-                itemSalePrice < itemPrice;
-
-              return (
-                <article
-                  key={item._id}
-                  onClick={() =>
-                    navigate(
-                      `/product/${item._id}`
-                    )
-                  }
-                  style={relatedCardStyle}
-                >
-                  <div
-                    style={relatedImageWrapperStyle}
+                return (
+                  <article
+                    key={
+                      item._id ||
+                      item.id
+                    }
+                    onClick={() =>
+                      navigate(
+                        `/product/${
+                          item._id ||
+                          item.id
+                        }`
+                      )
+                    }
+                    style={
+                      relatedCardStyle
+                    }
                   >
-                    {itemImages[0] ? (
-                      <img
-                        src={itemImages[0]}
-                        alt={item.name}
-                        style={relatedImageStyle}
-                      />
-                    ) : (
-                      <div style={noImageStyle}>
-                        No image
-                      </div>
-                    )}
-
-                    {itemHasSale && (
-                      <span
-                        style={relatedSaleBadgeStyle}
-                      >
-                        Sale
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={relatedInfoStyle}>
-                    <p style={relatedCategoryStyle}>
-                      {item.category}
-                    </p>
-
-                    <h3 style={relatedNameStyle}>
-                      {item.name}
-                    </h3>
+                    <div
+                      style={
+                        relatedImageWrapperStyle
+                      }
+                    >
+                      {itemImages[0] ? (
+                        <img
+                          src={
+                            itemImages[0]
+                          }
+                          alt={
+                            item.name
+                          }
+                          style={
+                            relatedImageStyle
+                          }
+                        />
+                      ) : (
+                        <div
+                          style={
+                            noImageStyle
+                          }
+                        >
+                          No image
+                        </div>
+                      )}
+                    </div>
 
                     <div
                       style={
-                        relatedPriceContainerStyle
+                        relatedInfoStyle
                       }
                     >
-                      {itemHasSale ? (
-                        <>
-                          <span
-                            style={
-                              relatedSalePriceStyle
-                            }
-                          >
-                            $
-                            {itemSalePrice.toFixed(
-                              2
-                            )}
-                          </span>
+                      <p>
+                        {
+                          item.category
+                        }
+                      </p>
 
-                          <span
-                            style={
-                              relatedOldPriceStyle
-                            }
-                          >
-                            $
-                            {itemPrice.toFixed(2)}
-                          </span>
-                        </>
-                      ) : (
-                        <span>
-                          ${itemPrice.toFixed(2)}
-                        </span>
-                      )}
+                      <h3>
+                        {
+                          item.name
+                        }
+                      </h3>
+
+                      <strong>
+                        $
+                        {Number(
+                          item.price ||
+                            0
+                        ).toFixed(
+                          2
+                        )}
+                      </strong>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              }
+            )}
           </div>
         )}
       </section>
     </main>
   );
 }
+
+/*
+ * =========================================
+ * STYLES
+ * =========================================
+ */
 
 const pageStyle = {
   maxWidth: "1200px",
@@ -968,17 +1902,13 @@ const statusPageStyle = {
   alignItems: "center",
   justifyContent: "center",
   gap: "15px",
-  padding: "30px",
   textAlign: "center",
 };
 
 const backButtonStyle = {
   marginBottom: "25px",
-  padding: "9px 0",
   border: "none",
   background: "transparent",
-  color: "#333333",
-  fontSize: "15px",
   cursor: "pointer",
 };
 
@@ -987,7 +1917,6 @@ const productSectionStyle = {
   gridTemplateColumns:
     "repeat(auto-fit, minmax(320px, 1fr))",
   gap: "60px",
-  alignItems: "start",
 };
 
 const galleryStyle = {
@@ -1013,13 +1942,10 @@ const mainImageStyle = {
 };
 
 const noImageStyle = {
-  width: "100%",
   minHeight: "220px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  backgroundColor: "#eeeeee",
-  color: "#777777",
 };
 
 const saleBadgeStyle = {
@@ -1027,11 +1953,8 @@ const saleBadgeStyle = {
   top: "18px",
   left: "18px",
   padding: "7px 13px",
-  borderRadius: "20px",
   backgroundColor: "#b00020",
-  color: "#ffffff",
-  fontSize: "13px",
-  fontWeight: "700",
+  color: "#fff",
 };
 
 const featuredBadgeStyle = {
@@ -1039,18 +1962,14 @@ const featuredBadgeStyle = {
   top: "18px",
   right: "18px",
   padding: "7px 13px",
-  borderRadius: "20px",
-  backgroundColor: "#111111",
-  color: "#ffffff",
-  fontSize: "13px",
-  fontWeight: "700",
+  backgroundColor: "#111",
+  color: "#fff",
 };
 
 const thumbnailContainerStyle = {
   display: "flex",
   gap: "12px",
   marginTop: "15px",
-  paddingBottom: "5px",
   overflowX: "auto",
 };
 
@@ -1059,17 +1978,13 @@ const thumbnailButtonStyle = {
   minWidth: "85px",
   height: "100px",
   padding: "3px",
-  overflow: "hidden",
-  borderRadius: "8px",
-  backgroundColor: "#ffffff",
-  cursor: "pointer",
+  background: "#fff",
 };
 
 const thumbnailImageStyle = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
-  borderRadius: "5px",
 };
 
 const productInfoStyle = {
@@ -1077,40 +1992,30 @@ const productInfoStyle = {
 };
 
 const categoryStyle = {
-  margin: "0 0 8px",
-  color: "#777777",
-  fontSize: "14px",
-  fontWeight: "600",
+  color: "#777",
   textTransform: "uppercase",
-  letterSpacing: "1px",
 };
 
 const productTitleStyle = {
-  margin: "0 0 10px",
   fontSize: "clamp(30px, 5vw, 48px)",
-  lineHeight: 1.1,
 };
 
 const brandStyle = {
-  color: "#555555",
+  color: "#555",
 };
 
 const ratingStyle = {
   display: "flex",
-  alignItems: "center",
   gap: "10px",
-  marginTop: "15px",
   color: "#d49b00",
 };
 
 const reviewCountStyle = {
-  color: "#777777",
-  fontSize: "14px",
+  color: "#777",
 };
 
 const priceContainerStyle = {
   display: "flex",
-  alignItems: "center",
   gap: "13px",
   margin: "24px 0",
 };
@@ -1127,50 +2032,32 @@ const salePriceStyle = {
 };
 
 const oldPriceStyle = {
-  color: "#888888",
-  fontSize: "19px",
+  color: "#888",
   textDecoration: "line-through",
 };
 
 const descriptionStyle = {
-  color: "#555555",
-  fontSize: "16px",
-  lineHeight: 1.75,
+  lineHeight: 1.7,
+  color: "#555",
 };
 
 const productDetailsBoxStyle = {
   marginTop: "24px",
   padding: "18px",
-  borderRadius: "10px",
   backgroundColor: "#f7f7f7",
 };
 
 const detailRowStyle = {
   display: "flex",
   justifyContent: "space-between",
-  gap: "20px",
-  margin: "7px 0",
 };
 
 const optionSectionStyle = {
   marginTop: "28px",
 };
 
-const optionHeaderStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  marginBottom: "12px",
-};
-
 const optionTitleStyle = {
-  margin: 0,
   fontSize: "16px",
-};
-
-const selectedValueStyle = {
-  color: "#666666",
-  fontSize: "14px",
 };
 
 const optionListStyle = {
@@ -1181,18 +2068,14 @@ const optionListStyle = {
 
 const choiceButtonStyle = {
   padding: "10px 16px",
-  border: "1px solid #cccccc",
-  borderRadius: "7px",
-  fontSize: "14px",
+  border: "1px solid #ccc",
   cursor: "pointer",
 };
 
 const sizeButtonStyle = {
   minWidth: "48px",
   padding: "10px 13px",
-  border: "1px solid #cccccc",
-  borderRadius: "7px",
-  fontSize: "14px",
+  border: "1px solid #ccc",
   cursor: "pointer",
 };
 
@@ -1201,42 +2084,31 @@ const quantitySectionStyle = {
 };
 
 const quantityControlStyle = {
-  width: "fit-content",
   display: "flex",
-  alignItems: "center",
-  marginTop: "12px",
-  overflow: "hidden",
-  border: "1px solid #cccccc",
-  borderRadius: "8px",
+  width: "fit-content",
+  border: "1px solid #ccc",
 };
 
 const quantityButtonStyle = {
   width: "44px",
   height: "44px",
-  border: "none",
-  backgroundColor: "#f3f3f3",
-  fontSize: "22px",
-  cursor: "pointer",
 };
 
 const quantityValueStyle = {
   minWidth: "50px",
-  textAlign: "center",
-  fontWeight: "700",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const errorMessageStyle = {
   padding: "12px",
-  marginTop: "20px",
-  borderRadius: "7px",
   backgroundColor: "#ffe5e5",
   color: "#b00020",
 };
 
 const successMessageStyle = {
   padding: "12px",
-  marginTop: "20px",
-  borderRadius: "7px",
   backgroundColor: "#e5f8e8",
   color: "#167329",
 };
@@ -1244,32 +2116,26 @@ const successMessageStyle = {
 const addToCartButtonStyle = {
   width: "100%",
   marginTop: "24px",
-  padding: "16px 25px",
+  padding: "16px",
   border: "none",
-  borderRadius: "8px",
-  backgroundColor: "#111111",
-  color: "#ffffff",
-  fontSize: "16px",
-  fontWeight: "700",
+  backgroundColor: "#111",
+  color: "#fff",
+  cursor: "pointer",
 };
 
 const shippingInfoStyle = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "10px 22px",
-  marginTop: "20px",
-  color: "#555555",
-  fontSize: "14px",
+  gap: "20px",
 };
 
 const descriptionSectionStyle = {
   marginTop: "80px",
   paddingTop: "40px",
-  borderTop: "1px solid #e3e3e3",
+  borderTop: "1px solid #ddd",
 };
 
 const sectionHeadingStyle = {
-  margin: 0,
   fontSize: "28px",
 };
 
@@ -1278,32 +2144,14 @@ const informationGridStyle = {
   gridTemplateColumns:
     "repeat(auto-fit, minmax(260px, 1fr))",
   gap: "45px",
-  marginTop: "25px",
 };
 
 const informationTextStyle = {
-  color: "#555555",
   lineHeight: 1.7,
 };
 
 const relatedSectionStyle = {
   marginTop: "80px",
-};
-
-const relatedHeaderStyle = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "20px",
-  marginBottom: "25px",
-};
-
-const viewAllButtonStyle = {
-  padding: "9px 14px",
-  border: "1px solid #222222",
-  borderRadius: "6px",
-  backgroundColor: "#ffffff",
-  cursor: "pointer",
 };
 
 const relatedGridStyle = {
@@ -1314,18 +2162,13 @@ const relatedGridStyle = {
 };
 
 const relatedCardStyle = {
-  overflow: "hidden",
-  border: "1px solid #eeeeee",
-  borderRadius: "10px",
-  backgroundColor: "#ffffff",
+  border: "1px solid #eee",
   cursor: "pointer",
 };
 
 const relatedImageWrapperStyle = {
-  position: "relative",
   height: "280px",
   overflow: "hidden",
-  backgroundColor: "#f5f5f5",
 };
 
 const relatedImageStyle = {
@@ -1334,57 +2177,16 @@ const relatedImageStyle = {
   objectFit: "cover",
 };
 
-const relatedSaleBadgeStyle = {
-  position: "absolute",
-  top: "12px",
-  left: "12px",
-  padding: "5px 10px",
-  borderRadius: "15px",
-  backgroundColor: "#b00020",
-  color: "#ffffff",
-  fontSize: "12px",
-  fontWeight: "700",
-};
-
 const relatedInfoStyle = {
   padding: "16px",
-};
-
-const relatedCategoryStyle = {
-  margin: "0 0 6px",
-  color: "#777777",
-  fontSize: "13px",
-};
-
-const relatedNameStyle = {
-  minHeight: "48px",
-  margin: "0 0 10px",
-  fontSize: "17px",
-};
-
-const relatedPriceContainerStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "9px",
-  fontWeight: "700",
-};
-
-const relatedSalePriceStyle = {
-  color: "#b00020",
-};
-
-const relatedOldPriceStyle = {
-  color: "#888888",
-  fontWeight: "400",
-  textDecoration: "line-through",
 };
 
 const primaryButtonStyle = {
   padding: "12px 22px",
   border: "none",
   borderRadius: "7px",
-  backgroundColor: "#111111",
-  color: "#ffffff",
+  backgroundColor: "#111",
+  color: "#fff",
   cursor: "pointer",
 };
 

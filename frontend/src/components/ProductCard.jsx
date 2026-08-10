@@ -15,6 +15,7 @@ function ProductCard({
   price,
   rating = 0,
   numReviews = 0,
+  source = "normal",
 }) {
   const navigate = useNavigate();
 
@@ -35,6 +36,7 @@ function ProductCard({
     price,
     rating,
     numReviews,
+    source,
   };
 
   const favorite = isInWishlist(id);
@@ -47,6 +49,16 @@ function ProductCard({
     event.stopPropagation();
 
     toggleWishlist(product);
+  }
+
+  function formatPrice() {
+    const numericPrice = Number(price || 0);
+
+    if (source === "printful") {
+      return `${numericPrice.toFixed(0)} kr`;
+    }
+
+    return `$${numericPrice.toFixed(2)}`;
   }
 
   return (
@@ -128,7 +140,7 @@ function ProductCard({
         </div>
 
         <p className="product-price">
-          ${Number(price || 0).toFixed(2)}
+          {formatPrice()}
         </p>
 
         <button

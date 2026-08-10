@@ -11,6 +11,7 @@ function Products({
   const [search, setSearch] = useState(initialSearch);
   const [activeCategory, setActiveCategory] =
     useState(selectedCategory);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -40,46 +41,208 @@ function Products({
         setLoading(true);
         setError("");
 
-        const response = await fetch(apiUrl("/products"), {
-          signal: controller.signal,
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        let normalProducts = [];
+        let printfulProducts = [];
 
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => null);
+        // ============================
+        // NORMAL RIANI PRODUCTS
+        // ============================
 
-          throw new Error(
-            errorData?.message ||
-              `Could not load products (HTTP ${response.status})`
+        try {
+          const normalResponse = await fetch(
+            apiUrl("/products"),
+            {
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+              },
+            }
           );
+
+          if (normalResponse.ok) {
+            const normalData =
+              await normalResponse.json();
+
+            normalProducts = Array.isArray(normalData)
+              ? normalData
+              : Array.isArray(normalData.products)
+              ? normalData.products
+              : [];
+          } else {
+            console.error(
+              "Normal products error:",
+              normalResponse.status
+            );
+          }
+        } catch (normalError) {
+          if (normalError.name !== "AbortError") {
+            console.error(
+              "Could not load normal products:",
+              normalError
+            );
+          }
         }
 
-        const data = await response.json();
+        // ============================
+        // PRINTFUL PRODUCTS
+        // ============================
 
-        const productList = Array.isArray(data)
-          ? data
-          : Array.isArray(data.products)
-            ? data.products
-            : [];
+        try {
+          const printfulResponse = await fetch(
+            apiUrl("/printful/products"),
+            {
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
 
-        setProducts(productList);
+          if (printfulResponse.ok) {
+            const printfulData =
+              await printfulResponse.json();
+
+            const printfulList = Array.isArray(
+              printfulData.result
+            )
+              ? printfulData.result
+              : [];
+
+            const detailedProducts =
+              await Promise.all(
+                printfulList.map(async (product) => {
+                  try {
+                    const detailResponse =
+                      await fetch(
+                        apiUrl(
+                          `/printful/products/${product.id}`
+                        ),
+                        {
+                          signal:
+                            controller.signal,
+                          headers: {
+                            Accept:
+                              "application/json",
+                          },
+                        }
+                      );
+
+                    if (!detailResponse.ok) {
+                      console.error(
+                        "Could not load Printful product:",
+                        product.id
+                      );
+
+                      return null;
+                    }
+
+                    const detailData =
+                      await detailResponse.json();
+
+                    const syncProduct =
+                      detailData?.result
+                        ?.sync_product;
+
+                    const variants =
+                      detailData?.result
+                        ?.sync_variants || [];
+
+                    const firstVariant =
+                      variants[0];
+
+                    return {
+                      id: `printful-${product.id}`,
+                      printfulId: product.id,
+
+                      name:
+                        syncProduct?.name ||
+                        product.name ||
+                        "Rianova Product",
+
+                      image:
+                        syncProduct?.thumbnail_url ||
+                        product.thumbnail_url ||
+                        "",
+
+                      category: "Women",
+                      brand: "Rianova",
+
+                      price: Number(
+                        firstVariant?.retail_price ||
+                          299
+                      ),
+
+                      rating: 5,
+                      numReviews: 0,
+
+                      source: "printful",
+                    };
+                  } catch (detailError) {
+                    if (
+                      detailError.name !==
+                      "AbortError"
+                    ) {
+                      console.error(
+                        "Printful detail error:",
+                        detailError
+                      );
+                    }
+
+                    return null;
+                  }
+                })
+              );
+
+            printfulProducts =
+              detailedProducts.filter(Boolean);
+          } else {
+            console.error(
+              "Printful products error:",
+              printfulResponse.status
+            );
+          }
+        } catch (printfulError) {
+          if (
+            printfulError.name !== "AbortError"
+          ) {
+            console.error(
+              "Could not load Printful products:",
+              printfulError
+            );
+          }
+        }
+
+        // ============================
+        // COMBINE BOTH
+        // ============================
+
+        const allProducts = [
+          ...printfulProducts,
+          ...normalProducts,
+        ];
+
+        setProducts(allProducts);
+
+        if (allProducts.length === 0) {
+          setError(
+            "No products could be loaded."
+          );
+        }
       } catch (err) {
         if (err.name === "AbortError") {
           return;
         }
 
-        console.error("Fetch products error:", err);
+        console.error(
+          "Fetch products error:",
+          err
+        );
 
-        const message =
-          err.message === "Failed to fetch"
-            ? "Cannot reach the server. Check your connection and API URL."
-            : err.message || "Unable to load products.";
+        setError(
+          err.message ||
+            "Unable to load products."
+        );
 
-        setError(message);
         setProducts([]);
       } finally {
         setLoading(false);
@@ -88,110 +251,180 @@ function Products({
 
     fetchProducts();
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+    };
   }, [reloadKey]);
 
   function handleRetry() {
-    setReloadKey((value) => value + 1);
+    setReloadKey(
+      (currentValue) => currentValue + 1
+    );
   }
-  const filteredProducts = products.filter((product) => {
-    const productName = String(product.name || "")
-      .trim()
-      .toLowerCase();
 
-    const productCategory = String(
-      product.category || ""
-    )
-      .trim()
-      .toLowerCase();
+  // ============================
+  // FILTER PRODUCTS
+  // ============================
 
-    const productBrand = String(product.brand || "")
-      .trim()
-      .toLowerCase();
+  const filteredProducts = products.filter(
+    (product) => {
+      const productName = String(
+        product.name || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    const searchText = String(search || "")
-      .trim()
-      .toLowerCase();
+      const productCategory = String(
+        product.category || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    const selected = String(activeCategory || "All")
-      .trim()
-      .toLowerCase();
+      const productBrand = String(
+        product.brand || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    const matchesSearch =
-      searchText === "" ||
-      productName.includes(searchText) ||
-      productCategory.includes(searchText) ||
-      productBrand.includes(searchText);
+      const searchText = String(
+        search || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    let matchesCategory = true;
+      const selected = String(
+        activeCategory || "All"
+      )
+        .trim()
+        .toLowerCase();
 
-    if (selected !== "all") {
-      if (selected === "women") {
-        matchesCategory =
-          productCategory === "women" ||
-          productCategory === "woman" ||
-          productCategory.includes("women") ||
-          productCategory.includes("female");
-      } else if (selected === "men") {
-        matchesCategory =
-          productCategory === "men" ||
-          productCategory === "man" ||
-          productCategory.includes("men") ||
-          productCategory.includes("male");
-      } else if (selected === "shoes") {
-        matchesCategory =
-          productCategory === "shoes" ||
-          productCategory.includes("shoe") ||
-          productCategory.includes("sneaker") ||
-          productCategory.includes("footwear");
-      } else if (selected === "accessories") {
-        matchesCategory =
-          productCategory === "accessories" ||
-          productCategory.includes("accessor") ||
-          productCategory.includes("bag") ||
-          productCategory.includes("watch") ||
-          productCategory.includes("jewelry");
-      } else {
-        matchesCategory =
-          productCategory === selected;
+      const matchesSearch =
+        searchText === "" ||
+        productName.includes(searchText) ||
+        productCategory.includes(searchText) ||
+        productBrand.includes(searchText);
+
+      let matchesCategory = true;
+
+      if (selected !== "all") {
+        if (selected === "women") {
+          matchesCategory =
+            productCategory === "women" ||
+            productCategory === "woman" ||
+            productCategory === "female" ||
+            productCategory.includes(
+              "women"
+            );
+        } else if (selected === "men") {
+          matchesCategory =
+            productCategory === "men" ||
+            productCategory === "man" ||
+            productCategory === "male" ||
+            productCategory === "mens" ||
+            productCategory.startsWith(
+              "men "
+            );
+        } else if (selected === "kids") {
+          matchesCategory =
+            productCategory === "kids" ||
+            productCategory === "kid" ||
+            productCategory === "children" ||
+            productCategory === "child" ||
+            productCategory.includes(
+              "kids"
+            );
+        } else if (selected === "shoes") {
+          matchesCategory =
+            productCategory === "shoes" ||
+            productCategory.includes(
+              "shoe"
+            ) ||
+            productCategory.includes(
+              "sneaker"
+            ) ||
+            productCategory.includes(
+              "footwear"
+            );
+        } else if (
+          selected === "accessories"
+        ) {
+          matchesCategory =
+            productCategory ===
+              "accessories" ||
+            productCategory.includes(
+              "accessor"
+            ) ||
+            productCategory.includes(
+              "bag"
+            ) ||
+            productCategory.includes(
+              "watch"
+            ) ||
+            productCategory.includes(
+              "jewelry"
+            );
+        } else {
+          matchesCategory =
+            productCategory === selected;
+        }
       }
-    }
 
-    return matchesSearch && matchesCategory;
-  });
+      return (
+        matchesSearch && matchesCategory
+      );
+    }
+  );
+
+  // ============================
+  // LOADING
+  // ============================
 
   if (loading) {
     return (
-      <div className="products-status">
-        <h2>Loading products...</h2>
-      </div>
+      <section className="products-section">
+        <div className="products-container">
+          <p>Loading products...</p>
+        </div>
+      </section>
     );
   }
 
-  if (error) {
+  // ============================
+  // ERROR
+  // ============================
+
+  if (error && products.length === 0) {
     return (
-      <div className="products-status">
-        <h2 className="products-error">
-          Unable to load products.
-        </h2>
+      <section className="products-section">
+        <div className="products-container">
+          <div className="products-error">
+            <h3>
+              Unable to load products.
+            </h3>
 
-        <p>{error}</p>
+            <p>{error}</p>
 
-        <button
-          type="button"
-          className="products-retry-button"
-          onClick={handleRetry}
-        >
-          Try again
-        </button>
-      </div>
+            <button
+              type="button"
+              className="products-retry-button"
+              onClick={handleRetry}
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </section>
     );
   }
+
+  // ============================
+  // UI
+  // ============================
 
   return (
-    <section className="products">
+    <section className="products-section">
       <div className="products-container">
-        <div className="products-title">
+        <div className="products-heading">
           <h2>
             {initialSearch
               ? initialSearch
@@ -239,35 +472,48 @@ function Products({
 
         {filteredProducts.length > 0 ? (
           <div className="products-grid">
-            {filteredProducts.map((product) => {
-              const productId =
-                product._id || product.id;
+            {filteredProducts.map(
+              (product) => {
+                const productId =
+                  product._id ||
+                  product.id;
 
-              const productImage =
-                product.images?.[0] ||
-                product.image ||
-                "";
+                const productImage =
+                  product.images?.[0] ||
+                  product.image ||
+                  product.thumbnail_url ||
+                  "";
 
-              const productPrice =
-                product.isOnSale &&
-                Number(product.salePrice) > 0
-                  ? product.salePrice
-                  : product.price;
+                const productPrice =
+                  product.isOnSale &&
+                  Number(
+                    product.salePrice
+                  ) > 0
+                    ? product.salePrice
+                    : product.price;
 
-              return (
-                <ProductCard
-                  key={productId}
-                  id={productId}
-                  image={productImage}
-                  category={product.category}
-                  brand={product.brand}
-                  name={product.name}
-                  price={productPrice}
-                  rating={product.rating}
-                  numReviews={product.numReviews}
-                />
-              );
-            })}
+                return (
+                  <ProductCard
+                    key={productId}
+                    id={productId}
+                    image={productImage}
+                    category={
+                      product.category
+                    }
+                    brand={product.brand}
+                    name={product.name}
+                    price={productPrice}
+                    rating={product.rating}
+                    numReviews={
+                      product.numReviews
+                    }
+                    source={
+                      product.source
+                    }
+                  />
+                );
+              }
+            )}
           </div>
         ) : (
           <p className="no-products">

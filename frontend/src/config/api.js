@@ -12,15 +12,21 @@ export const API_BASE_URL = (
 
 /**
  * Build a full API URL.
- * VITE_API_URL already includes `/api`, so pass paths like `/products`.
- * Legacy `/api/...` paths are also accepted and normalized.
+ *
+ * VITE_API_URL already includes `/api`,
+ * so pass paths like `/products`.
+ *
+ * Legacy `/api/...` paths are also accepted
+ * and normalized.
  */
 export function apiUrl(path = "") {
   if (!path) {
     return API_BASE_URL;
   }
 
-  let normalized = path.startsWith("/") ? path : `/${path}`;
+  let normalized = path.startsWith("/")
+    ? path
+    : `/${path}`;
 
   if (normalized === "/api") {
     normalized = "";
@@ -32,12 +38,26 @@ export function apiUrl(path = "") {
 }
 
 export function mediaUrl(image) {
-  if (!image) return "";
-  if (/^https?:\/\//i.test(image) || image.startsWith("data:")) {
+  if (!image) {
+    return "";
+  }
+
+  // External images such as Printful CDN
+  if (
+    /^https?:\/\//i.test(image) ||
+    image.startsWith("data:")
+  ) {
     return image;
   }
 
-  const backendOrigin = API_BASE_URL.replace(/\/api$/, "");
-  const normalized = image.startsWith("/") ? image : `/${image}`;
+  const backendOrigin = API_BASE_URL.replace(
+    /\/api$/,
+    ""
+  );
+
+  const normalized = image.startsWith("/")
+    ? image
+    : `/${image}`;
+
   return `${backendOrigin}${normalized}`;
 }
