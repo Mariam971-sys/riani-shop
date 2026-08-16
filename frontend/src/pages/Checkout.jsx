@@ -33,8 +33,6 @@ function Checkout() {
     country: "Sweden",
   });
 
-  const [promoCode, setPromoCode] = useState("");
-  const [promoApplied, setPromoApplied] = useState(false);
   const [error, setError] = useState("");
   const [placingOrder, setPlacingOrder] = useState(false);
 
@@ -57,22 +55,9 @@ function Checkout() {
     }, 0);
   }, [cartItems]);
 
-  const discount = promoApplied ? Math.round(itemsPrice * 0.1) : 0;
-  const shippingPrice = shippingFor(itemsPrice - discount);
-  const totalPrice = itemsPrice - discount + shippingPrice;
+  const shippingPrice = shippingFor(itemsPrice);
+  const totalPrice = itemsPrice + shippingPrice;
   const taxPrice = vatFromGross(totalPrice);
-
-  function handlePromoCode() {
-    if (
-      promoCode.trim().toUpperCase() === "RIANI10"
-    ) {
-      setPromoApplied(true);
-      setError("");
-    } else {
-      setPromoApplied(false);
-      setError("Invalid promo code.");
-    }
-  }
 
   function validateForm() {
     if (!formData.fullName.trim()) {
@@ -174,7 +159,6 @@ function Checkout() {
             postalCode: formData.postalCode,
             country: formData.country,
           },
-          promoCode,
         },
         token
           ? {
@@ -415,44 +399,10 @@ function Checkout() {
 
             <hr style={dividerStyle} />
 
-            <h3>Promo Code</h3>
-
-            <div style={promoStyle}>
-              <input
-                value={promoCode}
-                onChange={(event) =>
-                  setPromoCode(event.target.value)
-                }
-                placeholder="ENTER PROMO CODE"
-                style={promoInputStyle}
-              />
-
-              <button
-                type="button"
-                onClick={handlePromoCode}
-                style={blackButtonStyle}
-              >
-                Apply
-              </button>
-            </div>
-
-            <small>
-              Test code: <strong>RIANI10</strong>
-            </small>
-
-            <hr style={dividerStyle} />
-
             <SummaryRow
               label="Subtotal"
               value={formatSek(itemsPrice)}
             />
-
-            {promoApplied && (
-              <SummaryRow
-                label="Discount"
-                value={`-${formatSek(discount)}`}
-              />
-            )}
 
             <SummaryRow
               label="Shipping"
@@ -660,21 +610,6 @@ const dividerStyle = {
   border: "none",
   borderTop: "1px solid #ddd",
   margin: "25px 0",
-};
-
-const promoStyle = {
-  display: "flex",
-  gap: "12px",
-  marginBottom: "8px",
-};
-
-const promoInputStyle = {
-  flex: 1,
-  minWidth: 0,
-  height: "50px",
-  padding: "0 14px",
-  border: "1px solid #ccc",
-  borderRadius: "8px",
 };
 
 const blackButtonStyle = {
