@@ -57,7 +57,7 @@ router.post(
         mode: "payment",
         customer_email: built.shippingAddress.email,
         locale: "sv",
-        automatic_payment_methods: { enabled: true },
+        payment_method_types: ["card"],
         line_items: [
           {
             price_data: {
