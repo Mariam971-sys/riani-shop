@@ -57,7 +57,7 @@ router.post(
         mode: "payment",
         customer_email: built.shippingAddress.email,
         locale: "sv",
-        payment_method_types: ["card"],
+        payment_method_types: ["card", "swish"],
         line_items: [
           {
             price_data: {

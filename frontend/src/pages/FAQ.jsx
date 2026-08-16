@@ -26,8 +26,7 @@ function FAQ() {
 
       <h3>Which payment methods do you accept?</h3>
       <p>
-        Checkout uses Stripe in SEK. Card is available, and Klarna, Swish and
-        PayPal appear if they are enabled on the Stripe account.
+        Checkout uses Stripe in SEK. You can pay with card or Swish.
       </p>
 
       <h3>How can I contact customer support?</h3>

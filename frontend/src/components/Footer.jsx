@@ -71,11 +71,9 @@ function Footer() {
           <div className="payment-methods">
             <span>Visa</span>
             <span>Mastercard</span>
-            <span>Klarna</span>
             <span>Swish</span>
-            <span>PayPal</span>
           </div>
-          <p>Payments are processed by Stripe in SEK. Methods shown at checkout depend on your Stripe account.</p>
+          <p>Payments are processed by Stripe in SEK. Card and Swish are available at checkout.</p>
         </div>
       </div>
 

@@ -322,7 +322,7 @@ function Checkout() {
             />
 
             <p style={secureTextStyle}>
-              Card, Klarna, Swish and PayPal appear if they are enabled on your Stripe account. Prices include 25% Swedish VAT.
+              Pay with card or Swish. Prices include 25% Swedish VAT.
             </p>
 
             {error && (
@@ -475,7 +475,7 @@ function Checkout() {
             />
 
             <p style={secureTextStyle}>
-              Secure checkout with Stripe. Card, Klarna, Swish and PayPal appear if enabled on the Stripe account.
+              Secure checkout with Stripe. Card and Swish are available.
             </p>
 
             <p style={secureTextStyle}>

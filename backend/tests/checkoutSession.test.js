@@ -13,8 +13,13 @@ assert.doesNotMatch(
 
 assert.match(
   source,
-  /payment_method_types:\s*\[["']card["']\]/,
-  "Checkout session must use payment_method_types: ['card']"
+  /payment_method_types:\s*\[["']card["'],\s*["']swish["']\]/,
+  "Checkout session must use payment_method_types: ['card', 'swish']"
+);
+assert.doesNotMatch(
+  source,
+  /klarna/i,
+  "Checkout session must not include Klarna"
 );
 
 assert.match(source, /success_url/, "success_url must stay in checkout session");
