@@ -37,7 +37,7 @@ function Contact() {
       } else {
         setResult("Something went wrong. Please try again.");
       }
-    } catch (error) {
+    } catch {
       setResult("Something went wrong. Please try again.");
     }
 
@@ -135,7 +135,7 @@ function Contact() {
         >
           <h2>Why Shop With Us?</h2>
 
-          <p>✔ Secure Payments</p>
+          <p>✔ Cash on Delivery</p>
           <p>✔ Fast Shipping</p>
           <p>✔ Easy Returns</p>
           <p>✔ Premium Fashion</p>

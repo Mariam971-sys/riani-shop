@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { apiUrl, mediaUrl } from "../config/api";
+import { formatSek } from "../config/shop";
+import { loadGuestOrders } from "../utils/guestOrders";
 
 function MyOrders() {
   const navigate = useNavigate();
@@ -29,8 +31,8 @@ function MyOrders() {
       }
 
       if (!token) {
+        setOrders(loadGuestOrders());
         setLoading(false);
-        navigate("/login");
         return;
       }
 
@@ -273,7 +275,7 @@ function MyOrders() {
                     <span style={fieldLabelStyle}>Total</span>
 
                     <strong>
-                      ${Number(order.totalPrice || 0).toFixed(2)}
+                      {formatSek(Number(order.totalPrice || 0))}
                     </strong>
                   </div>
 
@@ -377,11 +379,20 @@ function MyOrders() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/orders/${orderId}`, {
-                      state: {
-                        order,
-                      },
-                    })
+                    navigate(
+                      `/orders/${orderId}${
+                        order.shippingAddress?.email
+                          ? `?email=${encodeURIComponent(
+                              order.shippingAddress.email
+                            )}`
+                          : ""
+                      }`,
+                      {
+                        state: {
+                          order,
+                        },
+                      }
+                    )
                   }
                   style={viewOrderButtonStyle}
                 >

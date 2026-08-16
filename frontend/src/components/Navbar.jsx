@@ -74,7 +74,7 @@ function Navbar() {
   return (
     <>
       <div className="top-announcement">
-        Free shipping on orders over $75
+        Free shipping on orders over 599 kr
       </div>
 
       <header className="main-header">

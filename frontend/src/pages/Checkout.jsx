@@ -1,23 +1,27 @@
 import { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
+import { apiUrl } from "../config/api";
+import {
+  formatSek,
+  priceToSek,
+  shippingFor,
+  vatFromGross,
+} from "../config/shop";
+import "../styles/Checkout.css";
 
 function Checkout() {
   const navigate = useNavigate();
 
   const cartContext = useContext(CartContext) || {};
 
-  // Works with several common CartContext names
   const cartItems =
     cartContext.cartItems ||
     cartContext.cart ||
     cartContext.items ||
     [];
-
-  const clearCart =
-    cartContext.clearCart ||
-    (() => {});
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -32,6 +36,7 @@ function Checkout() {
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [error, setError] = useState("");
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -42,55 +47,20 @@ function Checkout() {
     }));
   }
 
-  function formatPrice(item, amount) {
-    const value = Number(amount || 0);
-
-    if (item?.source === "printful") {
-      return `${value.toFixed(0)} kr`;
-    }
-
-    return `$${value.toFixed(2)}`;
-  }
-
-  const printfulItems = cartItems.filter(
-    (item) => item.source === "printful"
-  );
-
-  const normalItems = cartItems.filter(
-    (item) => item.source !== "printful"
-  );
-
-  const printfulSubtotal = useMemo(() => {
-    return printfulItems.reduce((total, item) => {
+  const itemsPrice = useMemo(() => {
+    return cartItems.reduce((total, item) => {
       return (
         total +
-        Number(item.price || 0) *
+        priceToSek(item.price, item.source) *
           Number(item.quantity || 1)
       );
     }, 0);
-  }, [printfulItems]);
+  }, [cartItems]);
 
-  const normalSubtotal = useMemo(() => {
-    return normalItems.reduce((total, item) => {
-      return (
-        total +
-        Number(item.price || 0) *
-          Number(item.quantity || 1)
-      );
-    }, 0);
-  }, [normalItems]);
-
-  const printfulDiscount =
-    promoApplied ? printfulSubtotal * 0.1 : 0;
-
-  const normalDiscount =
-    promoApplied ? normalSubtotal * 0.1 : 0;
-
-  const printfulTotal =
-    printfulSubtotal - printfulDiscount;
-
-  const normalTotal =
-    normalSubtotal - normalDiscount;
+  const discount = promoApplied ? Math.round(itemsPrice * 0.1) : 0;
+  const shippingPrice = shippingFor(itemsPrice - discount);
+  const totalPrice = itemsPrice - discount + shippingPrice;
+  const taxPrice = vatFromGross(totalPrice);
 
   function handlePromoCode() {
     if (
@@ -113,6 +83,14 @@ function Checkout() {
       return "Enter your email.";
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      return "Enter a valid email address.";
+    }
+
+    if (!formData.phone.trim()) {
+      return "Enter your phone number.";
+    }
+
     if (!formData.address.trim()) {
       return "Enter your address.";
     }
@@ -125,10 +103,14 @@ function Checkout() {
       return "Enter your postal code.";
     }
 
+    if (!formData.country.trim()) {
+      return "Enter your country.";
+    }
+
     return "";
   }
 
-  function handlePlaceOrder(event) {
+  async function handlePlaceOrder(event) {
     event.preventDefault();
 
     const validationError = validateForm();
@@ -143,17 +125,85 @@ function Checkout() {
       return;
     }
 
-    const order = {
-      shipping: formData,
-      items: cartItems,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      setPlacingOrder(true);
+      setError("");
 
-    console.log("Order:", order);
+      const orderItems = cartItems.map((item) => {
+        const productId =
+          item.product ||
+          item._id ||
+          item.id ||
+          item.productId;
 
-    clearCart();
+        return {
+          product: String(productId),
+          name: item.name,
+          image:
+            item.image ||
+            item.images?.[0] ||
+            "",
+          quantity: Number(item.quantity || 1),
+          size:
+            item.selectedSize ||
+            item.size ||
+            "",
+          color:
+            item.selectedColor ||
+            item.color ||
+            "",
+          source: item.source || "normal",
+          printfulId: item.printfulId || "",
+          printfulVariantId:
+            item.printfulVariantId || "",
+        };
+      });
 
-    navigate("/order-success");
+      const token = localStorage.getItem("token");
+
+      const { data } = await axios.post(
+        apiUrl("/payments/create-checkout-session"),
+        {
+          orderItems,
+          shippingAddress: {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            country: formData.country,
+          },
+          promoCode,
+        },
+        token
+          ? {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          : {}
+      );
+
+      if (!data?.url) {
+        setError("Payment page could not be created.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (currentError) {
+      console.error(
+        "Create order error:",
+        currentError
+      );
+
+      setError(
+        currentError.response?.data?.message ||
+          "Order could not be created. Please try again."
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
   }
 
   if (cartItems.length === 0) {
@@ -173,30 +223,29 @@ function Checkout() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main className="checkout-page" style={pageStyle}>
       <p style={smallTitleStyle}>RIANI SHOP</p>
 
-      <h1 style={mainTitleStyle}>Checkout</h1>
+      <h1 className="checkout-title" style={mainTitleStyle}>Checkout</h1>
 
       <p style={subtitleStyle}>
-        Enter your shipping details and review your
-        order.
+        Enter your shipping details and review your order.
       </p>
 
-      <div style={stepsStyle}>
+      <div className="checkout-steps" style={stepsStyle}>
         <div style={stepStyle}>
           <span style={stepNumberStyle}>1</span>
           <strong>Shipping</strong>
         </div>
 
-        <div style={stepLineStyle} />
+        <div className="checkout-step-line" style={stepLineStyle} />
 
         <div style={stepStyle}>
           <span style={stepNumberStyle}>2</span>
           <strong>Delivery</strong>
         </div>
 
-        <div style={stepLineStyle} />
+        <div className="checkout-step-line" style={stepLineStyle} />
 
         <div style={stepStyle}>
           <span style={stepNumberStyle}>3</span>
@@ -205,14 +254,13 @@ function Checkout() {
       </div>
 
       <form onSubmit={handlePlaceOrder}>
-        <div style={checkoutGridStyle}>
-          {/* LEFT SIDE */}
-          <section style={cardStyle}>
+        <div className="checkout-grid" style={checkoutGridStyle}>
+          <section className="checkout-card" style={cardStyle}>
             <h2 style={sectionTitleStyle}>
               Shipping Information
             </h2>
 
-            <div style={twoColumnsStyle}>
+            <div className="checkout-two-cols" style={twoColumnsStyle}>
               <Field
                 label="Full name"
                 name="fullName"
@@ -247,7 +295,7 @@ function Checkout() {
               placeholder="Street address"
             />
 
-            <div style={twoColumnsStyle}>
+            <div className="checkout-two-cols" style={twoColumnsStyle}>
               <Field
                 label="City"
                 name="city"
@@ -273,20 +321,32 @@ function Checkout() {
               placeholder="Country"
             />
 
+            <p style={secureTextStyle}>
+              Card, Klarna, Swish and PayPal appear if they are enabled on your Stripe account. Prices include 25% Swedish VAT.
+            </p>
+
             {error && (
               <p style={errorStyle}>{error}</p>
             )}
 
             <button
               type="submit"
-              style={placeOrderButtonStyle}
+              disabled={placingOrder}
+              style={{
+                ...placeOrderButtonStyle,
+                opacity: placingOrder ? 0.6 : 1,
+                cursor: placingOrder
+                  ? "not-allowed"
+                  : "pointer",
+              }}
             >
-              Place Order
+              {placingOrder
+                ? "Redirecting to payment..."
+                : "Pay with Stripe"}
             </button>
           </section>
 
-          {/* RIGHT SIDE */}
-          <aside style={cardStyle}>
+          <aside className="checkout-card" style={cardStyle}>
             <h2 style={sectionTitleStyle}>
               Order Summary
             </h2>
@@ -301,12 +361,10 @@ function Checkout() {
               const quantity =
                 Number(item.quantity || 1);
 
-              const itemPrice =
-                Number(item.price || 0);
-
               return (
                 <div
                   key={`${itemId}-${index}`}
+                  className="checkout-item"
                   style={orderItemStyle}
                 >
                   <img
@@ -346,9 +404,9 @@ function Checkout() {
                   </div>
 
                   <strong>
-                    {formatPrice(
-                      item,
-                      itemPrice * quantity
+                    {formatSek(
+                      priceToSek(item.price, item.source) *
+                        quantity
                     )}
                   </strong>
                 </div>
@@ -384,61 +442,41 @@ function Checkout() {
 
             <hr style={dividerStyle} />
 
-            {printfulItems.length > 0 && (
-              <>
-                <SummaryRow
-                  label="Printful items"
-                  value={`${printfulSubtotal.toFixed(
-                    0
-                  )} kr`}
-                />
+            <SummaryRow
+              label="Subtotal"
+              value={formatSek(itemsPrice)}
+            />
 
-                {promoApplied && (
-                  <SummaryRow
-                    label="Discount"
-                    value={`-${printfulDiscount.toFixed(
-                      0
-                    )} kr`}
-                  />
-                )}
-
-                <SummaryRow
-                  label="Printful total"
-                  value={`${printfulTotal.toFixed(
-                    0
-                  )} kr`}
-                  bold
-                />
-              </>
+            {promoApplied && (
+              <SummaryRow
+                label="Discount"
+                value={`-${formatSek(discount)}`}
+              />
             )}
 
-            {normalItems.length > 0 && (
-              <>
-                <SummaryRow
-                  label="Other items"
-                  value={`$${normalSubtotal.toFixed(
-                    2
-                  )}`}
-                />
+            <SummaryRow
+              label="Shipping"
+              value={
+                shippingPrice === 0
+                  ? "Free"
+                  : formatSek(shippingPrice)
+              }
+            />
 
-                {promoApplied && (
-                  <SummaryRow
-                    label="Discount"
-                    value={`-$${normalDiscount.toFixed(
-                      2
-                    )}`}
-                  />
-                )}
+            <SummaryRow
+              label="VAT (25% included)"
+              value={formatSek(taxPrice)}
+            />
 
-                <SummaryRow
-                  label="Other total"
-                  value={`$${normalTotal.toFixed(
-                    2
-                  )}`}
-                  bold
-                />
-              </>
-            )}
+            <SummaryRow
+              label="Total"
+              value={formatSek(totalPrice)}
+              bold
+            />
+
+            <p style={secureTextStyle}>
+              Secure checkout with Stripe. Card, Klarna, Swish and PayPal appear if enabled on the Stripe account.
+            </p>
 
             <p style={secureTextStyle}>
               🔒 Secure checkout

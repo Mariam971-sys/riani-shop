@@ -1,4 +1,5 @@
-import "./LegalPages.css";
+import { CONTACT_EMAIL } from "../config/shop";
+import "../styles/LegalPages.css";
 
 function PrivacyPolicy() {
   return (
@@ -50,8 +51,9 @@ function PrivacyPolicy() {
         <section>
           <h2>6. Your Rights</h2>
           <p>
-            You may request access to, correction of, or deletion of your
-            personal information by contacting us.
+            If you are in Sweden or the EU, you may request access to,
+            correction of, or deletion of your personal information under
+            GDPR. Contact us to use these rights.
           </p>
         </section>
 
@@ -62,8 +64,8 @@ function PrivacyPolicy() {
           </p>
           <p>
             Email:{" "}
-            <a href="mailto:support@riani-shop.com">
-              support@riani-shop.com
+            <a href={`mailto:${CONTACT_EMAIL}`}>
+              {CONTACT_EMAIL}
             </a>
           </p>
         </section>

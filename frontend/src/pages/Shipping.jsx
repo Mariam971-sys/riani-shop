@@ -1,3 +1,5 @@
+import { CONTACT_EMAIL, FREE_SHIPPING_THRESHOLD } from "../config/shop";
+
 function Shipping() {
   return (
     <main
@@ -33,19 +35,22 @@ function Shipping() {
       <h2>Shipping Cost</h2>
 
       <p>
-        Shipping costs are calculated at checkout based on your location.
+        Delivery in Sweden is free on orders over {FREE_SHIPPING_THRESHOLD} kr.
+        Standard shipping is 49 kr.
       </p>
 
       <h2>Order Tracking</h2>
 
       <p>
-        Once your order has been shipped, you will receive a tracking number by email.
+        After you place an order you can follow it from My Orders.
+        We will also email you if we need more delivery information.
       </p>
 
       <h2>Need Help?</h2>
 
       <p>
-        Contact us at <strong>support@riani-shop.com</strong> if you have any questions about your shipment.
+        Contact us at <strong>{CONTACT_EMAIL}</strong> if you have any
+        questions about your shipment.
       </p>
     </main>
   );

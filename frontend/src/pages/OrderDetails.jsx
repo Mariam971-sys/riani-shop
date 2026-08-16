@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { apiUrl, mediaUrl } from "../config/api";
+import { formatSek } from "../config/shop";
+import { getGuestOrderEmail } from "../utils/guestOrders";
 
 function OrderDetails() {
   const { id } = useParams();
@@ -14,9 +16,11 @@ function OrderDetails() {
 
   useEffect(() => {
     async function fetchOrderDetails() {
-      if (order) {
-        return;
-      }
+      const emailFromQuery = new URLSearchParams(
+        location.search
+      ).get("email");
+      const guestEmail =
+        emailFromQuery || getGuestOrderEmail(id);
 
       let token = localStorage.getItem("token");
       const savedUser = localStorage.getItem("userInfo");
@@ -30,8 +34,12 @@ function OrderDetails() {
         }
       }
 
-      if (!token) {
+      if (!token && !guestEmail && !order) {
         navigate("/login");
+        return;
+      }
+
+      if (order && !id) {
         return;
       }
 
@@ -39,12 +47,15 @@ function OrderDetails() {
         setLoading(true);
         setError("");
 
+        const headers = token
+          ? { Authorization: `Bearer ${token}` }
+          : {};
+
         const { data } = await axios.get(
           apiUrl(`/orders/${id}`),
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers,
+            params: guestEmail ? { email: guestEmail } : {},
           }
         );
 
@@ -52,24 +63,26 @@ function OrderDetails() {
       } catch (error) {
         console.error("Fetch order details error:", error);
 
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !guestEmail) {
           localStorage.removeItem("token");
           localStorage.removeItem("userInfo");
           navigate("/login");
           return;
         }
 
-        setError(
-          error.response?.data?.message ||
-            "Could not load order details."
-        );
+        if (!order) {
+          setError(
+            error.response?.data?.message ||
+              "Could not load order details."
+          );
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchOrderDetails();
-  }, [id, navigate, order]);
+  }, [id, location.search, navigate]);
 
   function formatDate(dateValue) {
     if (!dateValue) {
@@ -351,11 +364,11 @@ function OrderDetails() {
 
                     <div style={priceBoxStyle}>
                       <span style={unitPriceStyle}>
-                        ${price.toFixed(2)} each
+                        {formatSek(price)} each
                       </span>
 
                       <strong style={subtotalStyle}>
-                        ${subtotal.toFixed(2)}
+                        {formatSek(subtotal)}
                       </strong>
                     </div>
                   </article>
@@ -461,7 +474,7 @@ function OrderDetails() {
           <div style={summaryRowsStyle}>
             <div style={summaryRowStyle}>
               <span>Items</span>
-              <span>${itemsPrice.toFixed(2)}</span>
+              <span>{formatSek(itemsPrice)}</span>
             </div>
 
             <div style={summaryRowStyle}>
@@ -470,20 +483,20 @@ function OrderDetails() {
               <span>
                 {shippingPrice === 0
                   ? "Free"
-                  : `$${shippingPrice.toFixed(2)}`}
+                  : formatSek(shippingPrice)}
               </span>
             </div>
 
             <div style={summaryRowStyle}>
               <span>Tax</span>
-              <span>${taxPrice.toFixed(2)}</span>
+              <span>{formatSek(taxPrice)}</span>
             </div>
           </div>
 
           <div style={totalRowStyle}>
             <span>Total</span>
 
-            <strong>${totalPrice.toFixed(2)}</strong>
+            <strong>{formatSek(totalPrice)}</strong>
           </div>
 
           <div style={paymentBoxStyle}>

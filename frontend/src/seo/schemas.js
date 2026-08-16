@@ -60,7 +60,7 @@ export function productSchema(product, options = {}) {
     images = [],
     price,
     originalPrice,
-    currency = "USD",
+    currency = "SEK",
     availability,
   } = options;
 

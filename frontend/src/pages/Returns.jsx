@@ -1,3 +1,5 @@
+import { CONTACT_EMAIL, RETURN_DAYS } from "../config/shop";
+
 function Returns() {
   return (
     <main
@@ -12,7 +14,8 @@ function Returns() {
 
       <p>
         We want you to be happy with your purchase from Riani Shop.
-        If you are not satisfied, you may return eligible items within 30 days.
+        If you shop as a consumer in Sweden/EU, you have a {RETURN_DAYS}-day
+        right of withdrawal from the day you receive the order.
       </p>
 
       <h2>Return Conditions</h2>
@@ -34,19 +37,14 @@ function Returns() {
       <h2>Refunds</h2>
 
       <p>
-        Once your return has been received and approved, your refund
-        will be issued to your original payment method.
-      </p>
-
-      <p>
-        Refund processing times may vary depending on your bank
-        or payment provider.
+        For cash on delivery orders, approved returns are refunded after we
+        receive and inspect the item.
       </p>
 
       <h2>Need Help?</h2>
 
       <p>
-        Contact us at <strong>support@riani-shop.com</strong>.
+        Contact us at <strong>{CONTACT_EMAIL}</strong>.
       </p>
     </main>
   );

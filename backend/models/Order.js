@@ -40,9 +40,27 @@ const orderItemSchema = new mongoose.Schema(
     },
 
     product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      type: String,
       required: [true, "Product ID is required"],
+      trim: true,
+    },
+
+    source: {
+      type: String,
+      enum: ["normal", "printful"],
+      default: "normal",
+    },
+
+    printfulId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    printfulVariantId: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   {
@@ -167,6 +185,8 @@ const orderSchema = new mongoose.Schema(
         "Cash on Delivery",
         "Card",
         "Stripe",
+        "Klarna",
+        "Swish",
         "PayPal",
       ],
       default: "Cash on Delivery",
@@ -196,6 +216,36 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: [0, "Tax price cannot be negative"],
       default: 0,
+    },
+
+    discount: {
+      type: Number,
+      required: true,
+      min: [0, "Discount cannot be negative"],
+      default: 0,
+    },
+
+    currency: {
+      type: String,
+      default: "SEK",
+      trim: true,
+    },
+
+    stripeSessionId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    printfulOrderId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    emailsSent: {
+      type: Boolean,
+      default: false,
     },
 
     totalPrice: {

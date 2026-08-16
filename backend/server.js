@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
+dotenv.config({ path: ".env.local" });
 
 const app = require("./app");
 const { connectDB } = require("./config/db");
@@ -16,14 +17,29 @@ async function startServer() {
       throw new Error("JWT_SECRET is missing");
     }
 
+    if (!process.env.PRINTFUL_API_TOKEN) {
+      console.warn("PRINTFUL_API_TOKEN is missing");
+    }
+
+    console.log(
+      "Printful token loaded:",
+      process.env.PRINTFUL_API_TOKEN ? "YES" : "NO"
+    );
+
     await connectDB();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(
+        `Environment: ${process.env.NODE_ENV || "development"}`
+      );
     });
   } catch (error) {
-    console.error("Server startup failed:", error.message);
+    console.error(
+      "Server startup failed:",
+      error.message
+    );
+
     process.exit(1);
   }
 }

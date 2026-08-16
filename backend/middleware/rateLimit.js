@@ -20,4 +20,14 @@ const apiLimiter = rateLimit({
   },
 });
 
-module.exports = { authLimiter, apiLimiter };
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many checkout attempts. Please try again later.",
+  },
+});
+
+module.exports = { authLimiter, apiLimiter, checkoutLimiter };

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { formatSek, priceToSek } from "../config/shop";
 import "../styles/BestSellerCard.css";
 
 function BestSellerCard({
@@ -34,7 +35,7 @@ function BestSellerCard({
 
           <div className="stars">★★★★★</div>
 
-          <h4>${Number(price).toFixed(2)}</h4>
+          <h4>{formatSek(priceToSek(price))}</h4>
 
           <button type="button">
             Shop Now

@@ -1,14 +1,13 @@
+import { Link } from "react-router-dom";
+import { CONTACT_EMAIL } from "../config/shop";
 import "../styles/Footer.css";
 
 function Footer() {
   return (
     <footer className="footer">
-
       <div className="footer-container">
-
         <div className="footer-column">
           <h2>RIANI SHOP</h2>
-
           <p>
             Premium fashion for modern lifestyles.
             Discover quality clothing, shoes and accessories
@@ -18,112 +17,71 @@ function Footer() {
 
         <div className="footer-column">
           <h3>Shop</h3>
-
           <ul>
             <li>
-              <a href="/shop?category=women">Women</a>
+              <Link to="/shop?category=Women">Women</Link>
             </li>
-
             <li>
-              <a href="/shop?category=men">Men</a>
+              <Link to="/shop?category=Men">Men</Link>
             </li>
-
             <li>
-              <a href="/shop?category=shoes">Shoes</a>
+              <Link to="/shop?category=Shoes">Shoes</Link>
             </li>
-
             <li>
-              <a href="/shop?category=accessories">Accessories</a>
+              <Link to="/shop?category=Accessories">Accessories</Link>
             </li>
           </ul>
         </div>
 
         <div className="footer-column">
           <h3>Support</h3>
-
           <ul>
             <li>
-              <a href="/contact">Contact</a>
+              <Link to="/contact">Contact</Link>
             </li>
-
             <li>
-              <a href="/faq">FAQ</a>
+              <Link to="/faq">FAQ</Link>
             </li>
-
             <li>
-              <a href="/shipping">Shipping</a>
+              <Link to="/shipping">Shipping</Link>
             </li>
-
             <li>
-              <a href="/returns">Returns</a>
+              <Link to="/returns">Returns</Link>
             </li>
           </ul>
         </div>
 
         <div className="footer-column">
-          <h3>Follow Us</h3>
-
+          <h3>Legal</h3>
           <ul>
             <li>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Facebook
-              </a>
+              <Link to="/privacy">Privacy Policy</Link>
             </li>
-
             <li>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Instagram
-              </a>
+              <Link to="/terms">Terms of Service</Link>
             </li>
-
             <li>
-              <a
-                href="https://tiktok.com"
-                target="_blank"
-                rel="noreferrer"
-              >
-                TikTok
-              </a>
-            </li>
-
-            <li>
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noreferrer"
-              >
-                X (Twitter)
-              </a>
+              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             </li>
           </ul>
         </div>
 
         <div className="footer-column">
           <h3>Payment Methods</h3>
-
           <div className="payment-methods">
-            <span>VISA</span>
+            <span>Visa</span>
             <span>Mastercard</span>
             <span>Klarna</span>
-            <span>PayPal</span>
             <span>Swish</span>
+            <span>PayPal</span>
           </div>
+          <p>Payments are processed by Stripe in SEK. Methods shown at checkout depend on your Stripe account.</p>
         </div>
-
       </div>
 
       <div className="footer-bottom">
         © 2026 Riani Shop. All Rights Reserved.
       </div>
-
     </footer>
   );
 }

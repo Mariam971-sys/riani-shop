@@ -1,11 +1,68 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { mediaUrl } from "../config/api";
+import { useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
+import { mediaUrl, apiUrl } from "../config/api";
+import { formatSek } from "../config/shop";
+import { CartContext } from "../context/CartContext";
+import {
+  loadLastOrder,
+  saveGuestOrder,
+  saveLastOrder,
+} from "../utils/guestOrders";
 
 function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { clearCart } = useContext(CartContext) || {};
+  const sessionId = searchParams.get("session_id");
 
-  const order = location.state?.order;
+  const [order, setOrder] = useState(
+    location.state?.order || loadLastOrder()
+  );
+  const [loading, setLoading] = useState(Boolean(sessionId) && !location.state?.order);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (location.state?.order) {
+      saveLastOrder(location.state.order);
+      saveGuestOrder(location.state.order);
+      setOrder(location.state.order);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    async function loadPaidOrder() {
+      if (!sessionId) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data } = await axios.get(
+          apiUrl(`/payments/session/${sessionId}`)
+        );
+        if (data?.order) {
+          saveLastOrder(data.order);
+          saveGuestOrder(data.order);
+          setOrder(data.order);
+          if (typeof clearCart === "function") {
+            clearCart();
+          }
+        }
+      } catch (loadError) {
+        console.error("Load paid order error:", loadError);
+        setError(
+          loadError.response?.data?.message ||
+            "Could not confirm payment."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPaidOrder();
+  }, [sessionId, clearCart]);
 
   function getOrderId() {
     return order?._id || order?.id || "Not available";
@@ -49,6 +106,16 @@ function OrderSuccess() {
   const shippingPrice = Number(order?.shippingPrice || 0);
   const taxPrice = Number(order?.taxPrice || 0);
 
+  if (loading) {
+    return (
+      <main style={emptyPageStyle}>
+        <div style={emptyCardStyle}>
+          <h1>Confirming payment...</h1>
+        </div>
+      </main>
+    );
+  }
+
   if (!order) {
     return (
       <main style={emptyPageStyle}>
@@ -56,8 +123,8 @@ function OrderSuccess() {
           <h1>Order information unavailable</h1>
 
           <p style={emptyTextStyle}>
-            The order details could not be found. You may have refreshed
-            the page or opened it directly.
+            {error ||
+              "The order details could not be found. You may have refreshed the page or opened it directly."}
           </p>
 
           <div style={buttonGroupStyle}>
@@ -192,11 +259,11 @@ function OrderSuccess() {
 
                       <div style={priceBoxStyle}>
                         <span style={unitPriceStyle}>
-                          ${price.toFixed(2)} each
+                          {formatSek(price)} each
                         </span>
 
                         <strong style={subtotalStyle}>
-                          ${subtotal.toFixed(2)}
+                          {formatSek(subtotal)}
                         </strong>
                       </div>
                     </article>
@@ -281,7 +348,7 @@ function OrderSuccess() {
           <div style={summaryRowsStyle}>
             <div style={summaryRowStyle}>
               <span>Items</span>
-              <span>${itemsPrice.toFixed(2)}</span>
+              <span>{formatSek(itemsPrice)}</span>
             </div>
 
             <div style={summaryRowStyle}>
@@ -290,20 +357,20 @@ function OrderSuccess() {
               <span>
                 {shippingPrice === 0
                   ? "Free"
-                  : `$${shippingPrice.toFixed(2)}`}
+                  : formatSek(shippingPrice)}
               </span>
             </div>
 
             <div style={summaryRowStyle}>
               <span>Tax</span>
-              <span>${taxPrice.toFixed(2)}</span>
+              <span>{formatSek(taxPrice)}</span>
             </div>
           </div>
 
           <div style={totalRowStyle}>
             <span>Total</span>
 
-            <strong>${totalPrice.toFixed(2)}</strong>
+            <strong>{formatSek(totalPrice)}</strong>
           </div>
 
           <div style={buttonColumnStyle}>
@@ -326,7 +393,7 @@ function OrderSuccess() {
 
           <div style={infoBoxStyle}>
             <p>✓ Your order has been received</p>
-            <p>✓ Payment will be collected on delivery</p>
+            <p>✓ Payment received</p>
             <p>✓ You can track the order from My Orders</p>
           </div>
         </aside>

@@ -50,6 +50,30 @@ export const PAGE_SEO = {
     description: "Manage your Riani Shop profile and account details.",
     noindex: true,
   },
+  "/contact": {
+    title: `Contact | ${SITE_NAME}`,
+    description: "Contact Riani Shop customer support in Sweden.",
+  },
+  "/faq": {
+    title: `FAQ | ${SITE_NAME}`,
+    description: "Answers about shipping, returns, payment and orders at Riani Shop.",
+  },
+  "/shipping": {
+    title: `Shipping | ${SITE_NAME}`,
+    description: "Delivery times and shipping information for Riani Shop orders.",
+  },
+  "/returns": {
+    title: `Returns | ${SITE_NAME}`,
+    description: "Return and withdrawal information for Riani Shop customers.",
+  },
+  "/privacy": {
+    title: `Privacy Policy | ${SITE_NAME}`,
+    description: "How Riani Shop collects and uses personal information.",
+  },
+  "/terms": {
+    title: `Terms of Service | ${SITE_NAME}`,
+    description: "Terms for shopping at Riani Shop.",
+  },
 };
 
 export function getAdminSeo(pathname) {

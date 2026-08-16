@@ -33,8 +33,8 @@ router.get("/myorders", protect, getMyOrders);
 router.get("/", protect, admin, getOrders);
 
 // GET /api/orders/:id
-// User-ka order-ka leh ama admin
-router.get("/:id", protect, getOrderById);
+// User-ka order-ka leh, admin, ama guest email sax ah
+router.get("/:id", optionalProtect, getOrderById);
 
 // PUT /api/orders/:id/pay
 // Order-ka calaamadee inuu paid yahay

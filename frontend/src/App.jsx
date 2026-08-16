@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import CookieBanner from "./components/CookieBanner";
 import RouteSeo from "./seo/RouteSeo";
 import Home from "./pages/Home";
 
@@ -28,6 +29,8 @@ const Contact = lazy(() => import("./pages/Contact"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Shipping = lazy(() => import("./pages/Shipping"));
 const Returns = lazy(() => import("./pages/Returns"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 function PageLoader() {
   return (
@@ -123,6 +126,16 @@ function App() {
           />
 
           <Route
+            path="/privacy"
+            element={<PrivacyPolicy />}
+          />
+
+          <Route
+            path="/terms"
+            element={<TermsOfService />}
+          />
+
+          <Route
             path="/profile"
             element={<Profile />}
           />
@@ -160,6 +173,7 @@ function App() {
       </Suspense>
 
       <Footer />
+      <CookieBanner />
     </>
   );
 }

@@ -3,6 +3,7 @@ import { FaHeart, FaStar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import { WishlistContext } from "../context/WishlistContext";
+import { formatSek, priceToSek } from "../config/shop";
 
 import "../styles/ProductCard.css";
 
@@ -52,13 +53,7 @@ function ProductCard({
   }
 
   function formatPrice() {
-    const numericPrice = Number(price || 0);
-
-    if (source === "printful") {
-      return `${numericPrice.toFixed(0)} kr`;
-    }
-
-    return `$${numericPrice.toFixed(2)}`;
+    return formatSek(priceToSek(price, source));
   }
 
   return (

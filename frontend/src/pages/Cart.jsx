@@ -2,6 +2,8 @@ import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { mediaUrl } from "../config/api";
+import { formatSek, priceToSek } from "../config/shop";
+import "../styles/Checkout.css";
 
 function Cart() {
   const navigate = useNavigate();
@@ -13,7 +15,6 @@ function Cart() {
     decreaseQuantity,
     clearCart,
     totalItems,
-    totalPrice,
   } = useContext(CartContext);
 
   function getItemId(item) {
@@ -110,12 +111,14 @@ function Cart() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main className="cart-page" style={pageStyle}>
       <div style={pageHeaderStyle}>
         <div>
           <p style={pageLabelStyle}>Riani Shop</p>
 
-          <h1 style={pageTitleStyle}>Shopping Cart</h1>
+          <h1 className="cart-title" style={pageTitleStyle}>
+            Shopping Cart
+          </h1>
 
           <p style={pageSubtitleStyle}>
             {totalItems} {totalItems === 1 ? "item" : "items"} in
@@ -132,7 +135,7 @@ function Cart() {
         </button>
       </div>
 
-      <div style={cartLayoutStyle}>
+      <div className="cart-grid" style={cartLayoutStyle}>
         <section style={cartItemsSectionStyle}>
           {cart.map((item, index) => {
             const productId = getItemId(item);
@@ -142,7 +145,6 @@ function Cart() {
             const price = Number(item.price || 0);
             const quantity = Number(item.quantity || 1);
             const stock = Number(item.countInStock ?? 9999);
-            const subtotal = price * quantity;
 
             const cartKey = [
               productId,
@@ -152,7 +154,11 @@ function Cart() {
             ].join("-");
 
             return (
-              <article key={cartKey} style={cartItemStyle}>
+              <article
+                key={cartKey}
+                className="cart-item"
+                style={cartItemStyle}
+              >
                 <button
                   type="button"
                   onClick={() =>
@@ -208,7 +214,7 @@ function Cart() {
                   </div>
 
                   <div style={mobilePriceStyle}>
-                    ${price.toFixed(2)}
+                    {formatSek(priceToSek(price, item.source))}
                   </div>
 
                   <div style={itemControlsStyle}>
@@ -270,11 +276,11 @@ function Cart() {
 
                 <div style={priceSectionStyle}>
                   <span style={unitPriceStyle}>
-                    ${price.toFixed(2)} each
+                    {formatSek(priceToSek(price, item.source))} each
                   </span>
 
                   <strong style={subtotalStyle}>
-                    ${subtotal.toFixed(2)}
+                    {formatSek(priceToSek(price, item.source) * quantity)}
                   </strong>
                 </div>
               </article>
@@ -293,7 +299,17 @@ function Cart() {
 
             <div style={summaryRowStyle}>
               <span>Subtotal</span>
-              <span>${Number(totalPrice).toFixed(2)}</span>
+              <span>
+                {formatSek(
+                  cart.reduce(
+                    (total, item) =>
+                      total +
+                      priceToSek(item.price, item.source) *
+                        Number(item.quantity || 1),
+                    0
+                  )
+                )}
+              </span>
             </div>
 
             <div style={summaryRowStyle}>
@@ -305,7 +321,17 @@ function Cart() {
           <div style={totalRowStyle}>
             <span>Total</span>
 
-            <strong>${Number(totalPrice).toFixed(2)}</strong>
+            <strong>
+              {formatSek(
+                cart.reduce(
+                  (total, item) =>
+                    total +
+                    priceToSek(item.price, item.source) *
+                      Number(item.quantity || 1),
+                  0
+                )
+              )}
+            </strong>
           </div>
 
           <button

@@ -14,13 +14,13 @@ function Features() {
       <FeatureCard
         icon={<FaTruck />}
         title="Free Shipping"
-        description="Free delivery on orders over $50"
+        description="Free delivery in Sweden on orders over 599 kr"
       />
 
       <FeatureCard
         icon={<FaCreditCard />}
         title="Secure Payment"
-        description="Your payment information is protected"
+        description="Pay securely with Stripe. Card, Klarna and Swish if enabled."
       />
 
       <FeatureCard

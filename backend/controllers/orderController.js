@@ -1,84 +1,20 @@
 const mongoose = require("mongoose");
 const Order = require("../models/Order");
+const { buildOrderFromPayload } = require("../services/checkoutService");
 
 // Create New Order
 const createOrder = async (req, res) => {
   try {
-    const {
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice,
-    } = req.body;
-
-    if (!Array.isArray(orderItems) || orderItems.length === 0) {
-      return res.status(400).json({
-        message: "No order items",
-      });
-    }
-
-    if (
-      !shippingAddress ||
-      !shippingAddress.fullName ||
-      !shippingAddress.email ||
-      !shippingAddress.address ||
-      !shippingAddress.city ||
-      !shippingAddress.postalCode ||
-      !shippingAddress.country
-    ) {
-      return res.status(400).json({
-        message: "Complete shipping address is required",
-      });
-    }
-
-    const invalidOrderItem = orderItems.some(
-      (item) =>
-        !item.product ||
-        !item.name ||
-        Number(item.price) < 0 ||
-        Number(item.quantity) < 1
-    );
-
-    if (invalidOrderItem) {
-      return res.status(400).json({
-        message: "One or more order items are invalid",
-      });
-    }
-
-    const normalizedOrderItems = orderItems.map((item) => ({
-      product: item.product,
-      name: item.name,
-      image: item.image || "",
-      price: Number(item.price),
-      quantity: Number(item.quantity || 1),
-      size: item.size || item.selectedSize || "",
-      color: item.color || item.selectedColor || "",
-    }));
+    const built = await buildOrderFromPayload({
+      orderItems: req.body.orderItems,
+      shippingAddress: req.body.shippingAddress,
+      promoCode: req.body.promoCode,
+    });
 
     const order = await Order.create({
       user: req.user?._id || null,
-
-      orderItems: normalizedOrderItems,
-
-      shippingAddress: {
-        fullName: shippingAddress.fullName,
-        email: shippingAddress.email,
-        phone: shippingAddress.phone || "",
-        address: shippingAddress.address,
-        city: shippingAddress.city,
-        postalCode: shippingAddress.postalCode,
-        country: shippingAddress.country,
-      },
-
-      paymentMethod: paymentMethod || "Cash on Delivery",
-
-      itemsPrice: Number(itemsPrice || 0),
-      shippingPrice: Number(shippingPrice || 0),
-      taxPrice: Number(taxPrice || 0),
-      totalPrice: Number(totalPrice || 0),
+      ...built,
+      paymentMethod: req.body.paymentMethod || "Stripe",
     });
 
     const createdOrder = await Order.findById(order._id).populate(
@@ -90,7 +26,7 @@ const createOrder = async (req, res) => {
   } catch (error) {
     console.error("Create order error:", error);
 
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message || "Order could not be created",
     });
   }
@@ -140,17 +76,31 @@ const getOrderById = async (req, res) => {
     }
 
     const orderUserId =
-      order.user?._id?.toString() || order.user?.toString();
+      order.user?._id?.toString() || order.user?.toString() || "";
 
-    const loggedInUserId = req.user._id.toString();
+    const loggedInUserId = req.user?._id?.toString() || "";
+    const orderEmail = String(
+      order.shippingAddress?.email || ""
+    ).trim().toLowerCase();
+    const requestedEmail = String(req.query.email || "")
+      .trim()
+      .toLowerCase();
 
-    if (!req.user.isAdmin && orderUserId !== loggedInUserId) {
-      return res.status(403).json({
-        message: "You are not authorized to view this order",
-      });
+    if (req.user?.isAdmin) {
+      return res.json(order);
     }
 
-    res.json(order);
+    if (loggedInUserId && orderUserId && orderUserId === loggedInUserId) {
+      return res.json(order);
+    }
+
+    if (requestedEmail && orderEmail && requestedEmail === orderEmail) {
+      return res.json(order);
+    }
+
+    return res.status(403).json({
+      message: "You are not authorized to view this order",
+    });
   } catch (error) {
     console.error("Get order by ID error:", error);
 

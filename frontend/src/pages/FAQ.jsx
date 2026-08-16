@@ -1,3 +1,5 @@
+import { CONTACT_EMAIL, RETURN_DAYS } from "../config/shop";
+
 function FAQ() {
   return (
     <main
@@ -11,16 +13,27 @@ function FAQ() {
       <h1>Frequently Asked Questions</h1>
 
       <h3>How long does shipping take?</h3>
-      <p>Shipping usually takes 2–7 business days depending on your location.</p>
+      <p>
+        Shipping usually takes 2–7 business days depending on your location.
+        Orders in Sweden are typically delivered in 2–5 business days.
+      </p>
 
       <h3>Can I return my order?</h3>
-      <p>Yes. You can return your order within 30 days if the item is unused and in its original condition.</p>
+      <p>
+        Yes. Consumers in Sweden/EU may withdraw within {RETURN_DAYS} days of
+        receiving the order. Unused items can also be returned within 30 days.
+      </p>
 
       <h3>Which payment methods do you accept?</h3>
-      <p>We accept Visa, Mastercard, Klarna, PayPal and Swish.</p>
+      <p>
+        Checkout uses Stripe in SEK. Card is available, and Klarna, Swish and
+        PayPal appear if they are enabled on the Stripe account.
+      </p>
 
       <h3>How can I contact customer support?</h3>
-      <p>Email us at support@riani-shop.com and we'll reply as soon as possible.</p>
+      <p>
+        Email us at {CONTACT_EMAIL} and we will reply as soon as possible.
+      </p>
     </main>
   );
 }

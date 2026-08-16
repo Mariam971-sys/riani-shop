@@ -14,6 +14,7 @@ import axios from "axios";
 
 import { CartContext } from "../context/CartContext";
 import { apiUrl, mediaUrl } from "../config/api";
+import { formatSek, priceToSek } from "../config/shop";
 
 import {
   breadcrumbSchema,
@@ -821,21 +822,12 @@ function ProductDetails() {
   function formatPrice(
     amount
   ) {
-    const value =
-      Number(amount || 0);
-
-    if (
-      product.source ===
-      "printful"
-    ) {
-      return `${value.toFixed(
-        0
-      )} kr`;
-    }
-
-    return `$${value.toFixed(
-      2
-    )}`;
+    return formatSek(
+      priceToSek(
+        amount,
+        product.source || "normal"
+      )
+    );
   }
 
   /*
