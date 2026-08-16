@@ -13,14 +13,10 @@ assert.doesNotMatch(
 
 assert.match(
   source,
-  /payment_method_types:\s*\[["']card["'],\s*["']swish["']\]/,
-  "Checkout session must request payment_method_types: ['card', 'swish']"
-);
-assert.match(
-  source,
   /payment_method_types:\s*\[["']card["']\]/,
-  "Checkout must fall back to card if Swish is not enabled"
+  "Checkout session must use payment_method_types: ['card']"
 );
+assert.doesNotMatch(source, /swish/i, "Checkout session must not include Swish");
 assert.doesNotMatch(
   source,
   /klarna/i,

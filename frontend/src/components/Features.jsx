@@ -20,7 +20,7 @@ function Features() {
       <FeatureCard
         icon={<FaCreditCard />}
         title="Secure Payment"
-        description="Pay securely with Stripe. Card and Swish."
+        description="Pay securely with Stripe. Card payments."
       />
 
       <FeatureCard

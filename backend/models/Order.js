@@ -186,7 +186,6 @@ const orderSchema = new mongoose.Schema(
         "Card",
         "Stripe",
         "Klarna",
-        "Swish",
         "PayPal",
       ],
       default: "Cash on Delivery",

@@ -322,7 +322,7 @@ function Checkout() {
             />
 
             <p style={secureTextStyle}>
-              Pay with card or Swish. Prices include 25% Swedish VAT.
+              Pay with card. Prices include 25% Swedish VAT.
             </p>
 
             {error && (
@@ -475,7 +475,7 @@ function Checkout() {
             />
 
             <p style={secureTextStyle}>
-              Secure checkout with Stripe. Card and Swish are available.
+              Secure checkout with Stripe. Card payments are available.
             </p>
 
             <p style={secureTextStyle}>

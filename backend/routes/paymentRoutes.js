@@ -53,11 +53,11 @@ router.post(
         status: "Pending",
       });
 
-      const sessionParams = {
+      const session = await stripe.checkout.sessions.create({
         mode: "payment",
         customer_email: built.shippingAddress.email,
         locale: "sv",
-        payment_method_types: ["card", "swish"],
+        payment_method_types: ["card"],
         line_items: [
           {
             price_data: {
@@ -81,26 +81,7 @@ router.post(
           shop: COMPANY.name,
         },
         client_reference_id: String(order._id),
-      };
-
-      let session;
-      try {
-        session = await stripe.checkout.sessions.create(sessionParams);
-      } catch (stripeError) {
-        const swishUnavailable = /payment method type provided: swish/i.test(
-          stripeError.message || ""
-        );
-        if (!swishUnavailable) {
-          throw stripeError;
-        }
-        console.warn(
-          "Swish is not enabled on this Stripe account; creating card-only checkout."
-        );
-        session = await stripe.checkout.sessions.create({
-          ...sessionParams,
-          payment_method_types: ["card"],
-        });
-      }
+      });
 
       order.stripeSessionId = session.id;
       await order.save();
